@@ -1,208 +1,1479 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>三謀S5隊伍克制與兵種查詢</title>
+    <title>三國志·謀定天下 - 隊伍克制與兵種反查系統 (S6W3)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PapaParse CSV Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        sgm: {
+                            gold: '#D4AF37',
+                            goldLight: '#F3E5AB',
+                            darkBg: '#0F172A',
+                            cardBg: '#1E293B',
+                            border: '#334155',
+                            shield: '#0284C7',
+                            spear: '#059669',
+                            bow: '#D97706',
+                            cavalry: '#E11D48'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans TC', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 100vh; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); flex: 1; width: 100%; box-sizing: border-box; }
-        h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
-
-        /* 搜尋與篩選區塊樣式 */
-        .search-box { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; box-sizing: border-box; }
-        .filter-container { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #ecf0f1; padding: 15px; border-radius: 5px; }
-        .filter-container select { flex: 1; min-width: 120px; padding: 10px; border: 1px solid #bdc3c7; border-radius: 5px; font-size: 15px; background: white; }
-        .filter-label { width: 100%; font-weight: bold; color: #34495e; margin-bottom: 5px; font-size: 14px; }
-        .btn-clear { padding: 10px 15px; background: #95a5a6; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; transition: background 0.3s; }
-        .btn-clear:hover { background: #7f8c8d; }
-
-        /* 卡片樣式 */
-        .team-card { border-left: 5px solid #3498db; background: #f9f9f9; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
-        .team-name { font-size: 20px; font-weight: bold; color: #2980b9; margin-bottom: 10px; }
-        .heroes { font-weight: bold; color: #e67e22; margin-bottom: 5px; }
-        .troops { color: #7f8c8d; font-size: 14px; margin-bottom: 15px; font-weight: bold; background: #e8eaed; display: inline-block; padding: 5px 10px; border-radius: 4px; }
-        .matchup { display: flex; gap: 15px; flex-wrap: wrap; }
-        .good-against { flex: 1; min-width: 200px; background: #e8f8f5; padding: 12px; border-radius: 5px; border: 1px solid #a3e4d7; }
-        .bad-against { flex: 1; min-width: 200px; background: #fdedec; padding: 12px; border-radius: 5px; border: 1px solid #f5b7b1; }
-        .title-good { color: #17a589; font-weight: bold; margin-bottom: 8px; }
-        .title-bad { color: #c0392b; font-weight: bold; margin-bottom: 8px; }
+        body {
+            background-color: #0B0F19;
+            color: #F1F5F9;
+            font-family: 'Noto Sans TC', 'Inter', sans-serif;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(30, 58, 138, 0.08) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
         
-        /* 頁尾樣式 */
-        footer { text-align: center; padding: 20px 0 10px 0; color: #7f8c8d; font-size: 14px; line-height: 1.6; margin-top: 20px; }
-        .sponsor { font-weight: bold; color: #e67e22; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0F172A;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        
+        .gold-glow {
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.25);
+        }
+        .card-hover {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(212, 175, 55, 0.15);
+        }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col antialiased">
 
-<div class="container">
-    <h1>三謀S5隊伍克制與兵種查詢</h1>
+    <!-- Top Header Navigation -->
+    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Brand Title -->
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-slate-950 font-black text-xl shadow-md border border-amber-300/40">
+                        謀
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="font-bold text-lg text-slate-100 tracking-wide">三國志·謀定天下</h1>
+                            <span class="px-2 py-0.5 text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full">S6 賽季特輯</span>
+                        </div>
+                        <p class="text-xs text-slate-400">隊伍克制與兵種反查速查系統</p>
+                    </div>
+                </div>
 
-    <input type="text" id="searchInput" class="search-box" placeholder="輸入隊伍名稱或武將 (例如: 月亮馬, SP諸葛亮)..." onkeyup="filterTeams()">
-    
-    <div class="filter-container">
-        <div class="filter-label">🔍 兵種反查 (無須照順序，可選 1~3 個)</div>
-        <select id="troop1" onchange="filterTeams()">
-            <option value="">- 選擇兵種 1 -</option>
-        </select>
-        <select id="troop2" onchange="filterTeams()">
-            <option value="">- 選擇兵種 2 -</option>
-        </select>
-        <select id="troop3" onchange="filterTeams()">
-            <option value="">- 選擇兵種 3 -</option>
-        </select>
-        <button class="btn-clear" onclick="clearFilters()">清除條件</button>
+                <!-- Navigation Tabs (Desktop) -->
+                <nav class="hidden md:flex items-center gap-1">
+                    <button onclick="switchTab('list')" id="nav-tab-list" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 text-amber-400 bg-slate-800 border border-amber-500/30">
+                        <i class="fa-solid fa-list-ul"></i> 隊伍列表
+                    </button>
+                    <button onclick="switchTab('troop')" id="nav-tab-troop" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 text-slate-300 hover:bg-slate-800">
+                        <i class="fa-solid fa-shield-halved"></i> 兵種反查
+                    </button>
+                    <button onclick="switchTab('versus')" id="nav-tab-versus" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 text-slate-300 hover:bg-slate-800">
+                        <i class="fa-solid fa-swords"></i> 對陣克制速查
+                    </button>
+                    <button onclick="switchTab('data')" id="nav-tab-data" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 text-slate-300 hover:bg-slate-800">
+                        <i class="fa-solid fa-file-csv"></i> CSV管理 & GitHub
+                    </button>
+                </nav>
+
+                <!-- Header Actions -->
+                <div class="flex items-center gap-2">
+                    <button onclick="openModal('addTeamModal')" class="hidden sm:flex px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-plus"></i> 新增隊伍
+                    </button>
+                    <button onclick="toggleMobileMenu()" class="md:hidden p-2 text-slate-400 hover:text-white rounded-lg">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobileMenu" class="hidden md:hidden border-t border-slate-800 bg-slate-900 px-4 py-3 space-y-2">
+            <button onclick="switchTab('list'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-amber-400 bg-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-list-ul"></i> 隊伍列表
+            </button>
+            <button onclick="switchTab('troop'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-shield-halved"></i> 兵種反查
+            </button>
+            <button onclick="switchTab('versus'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-swords"></i> 對陣克制速查
+            </button>
+            <button onclick="switchTab('data'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-file-csv"></i> CSV管理 & GitHub指南
+            </button>
+            <button onclick="openModal('addTeamModal'); toggleMobileMenu()" class="w-full text-center px-3 py-2 rounded-lg text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-plus"></i> 新增隊伍
+            </button>
+        </div>
+    </header>
+
+    <!-- Toast Notification Overlay -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 text-slate-100 border border-slate-700 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 pointer-events-none">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <span id="toastMsg" class="text-sm font-medium">通知訊息</span>
     </div>
 
-    <div id="results"></div>
-</div>
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-<footer>
-    記得是要反過來用喔，查找完後用「劣勢對局」裏的打。<br>
-    by 流星街 飛羽舞霜<br>
-    由<span class="sponsor">男娘基金會</span>贊助<br>
-    15/8/2026 更新
-</footer>
+        <!-- Top Overview Stats Bar -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-chess-board"></i>
+                </div>
+                <div>
+                    <div class="text-xs text-slate-400">總隊伍數</div>
+                    <div class="text-lg font-bold text-slate-100" id="statTotalTeams">14</div>
+                </div>
+            </div>
+            
+            <div class="bg-slate-900/80 border border-sky-500/20 rounded-xl p-3 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-shield"></i>
+                </div>
+                <div>
+                    <div class="text-xs text-slate-400">含盾兵隊伍</div>
+                    <div class="text-lg font-bold text-sky-400" id="statShieldTeams">0</div>
+                </div>
+            </div>
 
-<script>
-    let teamData = [];
+            <div class="bg-slate-900/80 border border-emerald-500/20 rounded-xl p-3 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-location-crosshairs"></i>
+                </div>
+                <div>
+                    <div class="text-xs text-slate-400">含槍兵隊伍</div>
+                    <div class="text-lg font-bold text-emerald-400" id="statSpearTeams">0</div>
+                </div>
+            </div>
 
-    // 載入 S5 的 JSON 資料
-    fetch('data_s5.json')
-        .then(response => response.json())
-        .then(data => {
-            // 過濾掉沒有隊伍名稱的無效資料，避免空白框
-            teamData = data.filter(team => team.name && team.name.toString().trim() !== '');
-            populateTroopDropdowns(teamData);
-            displayTeams(teamData);
-        })
-        .catch(error => {
-            console.error('無法載入資料:', error);
-            document.getElementById('results').innerHTML = '<p style="color:red; text-align:center;">資料載入失敗，請確認 data_s5.json 存在且伺服器已啟動。</p>';
+            <div class="bg-slate-900/80 border border-amber-500/20 rounded-xl p-3 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-bow-arrow"></i>
+                </div>
+                <div>
+                    <div class="text-xs text-slate-400">含弓兵隊伍</div>
+                    <div class="text-lg font-bold text-amber-400" id="statBowTeams">0</div>
+                </div>
+            </div>
+
+            <div class="col-span-2 md:col-span-1 bg-slate-900/80 border border-rose-500/20 rounded-xl p-3 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-horse"></i>
+                </div>
+                <div>
+                    <div class="text-xs text-slate-400">含騎兵隊伍</div>
+                    <div class="text-lg font-bold text-rose-400" id="statCavalryTeams">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 1: 隊伍列表 (LIST) ================= -->
+        <section id="tab-list" class="space-y-6">
+            <!-- Filter & Search Controls Banner -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <!-- Search Input -->
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" id="globalSearchInput" oninput="renderTeamList()" placeholder="搜尋隊伍名稱、武將 (例如: 左慈/周瑜/姜維)、戰法或克制隊伍..." class="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition">
+                        <button onclick="clearSearch()" id="clearSearchBtn" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- Quick Filter Tags -->
+                    <div class="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+                        <span class="text-xs text-slate-400 whitespace-nowrap"><i class="fa-solid fa-filter"></i> 快速過濾:</span>
+                        <button onclick="setTroopFilter('all')" class="troop-filter-pill px-3 py-1 rounded-lg text-xs font-medium border bg-amber-500/20 text-amber-300 border-amber-500/40 whitespace-nowrap">全部</button>
+                        <button onclick="setTroopFilter('盾')" class="troop-filter-pill px-3 py-1 rounded-lg text-xs font-medium border bg-slate-800 text-sky-400 border-slate-700 hover:border-sky-500/40 whitespace-nowrap">包含盾</button>
+                        <button onclick="setTroopFilter('槍')" class="troop-filter-pill px-3 py-1 rounded-lg text-xs font-medium border bg-slate-800 text-emerald-400 border-slate-700 hover:border-emerald-500/40 whitespace-nowrap">包含槍</button>
+                        <button onclick="setTroopFilter('弓')" class="troop-filter-pill px-3 py-1 rounded-lg text-xs font-medium border bg-slate-800 text-amber-400 border-slate-700 hover:border-amber-500/40 whitespace-nowrap">包含弓</button>
+                        <button onclick="setTroopFilter('騎')" class="troop-filter-pill px-3 py-1 rounded-lg text-xs font-medium border bg-slate-800 text-rose-400 border-slate-700 hover:border-rose-500/40 whitespace-nowrap">包含騎</button>
+                    </div>
+                </div>
+
+                <!-- Active Filter Alert -->
+                <div id="activeFilterNotice" class="hidden flex items-center justify-between px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs text-amber-300">
+                    <span id="activeFilterText">當前搜尋過濾條件</span>
+                    <button onclick="resetAllFilters()" class="text-amber-400 underline hover:text-amber-200">重置過濾</button>
+                </div>
+            </div>
+
+            <!-- Team Cards Grid -->
+            <div id="teamsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <!-- Dynamically Rendered Team Cards -->
+            </div>
+
+            <!-- Empty Search State -->
+            <div id="emptySearchState" class="hidden text-center py-16 bg-slate-900/50 border border-dashed border-slate-800 rounded-2xl space-y-3">
+                <div class="w-16 h-16 mx-auto rounded-full bg-slate-800 flex items-center justify-center text-slate-500 text-2xl">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-300">未找到匹配的隊伍</h3>
+                <p class="text-xs text-slate-500">嘗試調整關鍵字或重置兵種過濾器</p>
+                <button onclick="resetAllFilters()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition">
+                    清除所有條件
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= TAB 2: 兵種反查 (TROOP FILTER) ================= -->
+        <section id="tab-troop" class="hidden space-y-6">
+            <!-- Troop Combinations Header Card -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-5">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                            <i class="fa-solid fa-shield-halved"></i> 兵種反查與組合對照
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">選擇特定兵種組合或依位置指定兵種，反查出符合的隊伍。</p>
+                    </div>
+                    <button onclick="resetTroopCombos()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition flex items-center gap-1.5 self-start">
+                        <i class="fa-solid fa-arrow-rotate-left"></i> 重置兵種篩選
+                    </button>
+                </div>
+
+                <!-- Fast Preset Chips -->
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-300 uppercase tracking-wider block">熱門兵種組合預設：</label>
+                    <div class="flex flex-wrap gap-2" id="presetComboContainer">
+                        <!-- Combo chips rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Slot-by-Slot Selectors -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
+                    <!-- Slot 1 -->
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                            <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 text-xs flex items-center justify-center font-bold">1</span>
+                            主將 (Hero 1) 兵種
+                        </label>
+                        <select id="slot1Select" onchange="applySlotFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                            <option value="">不限兵種</option>
+                            <option value="盾">🛡️ 盾兵</option>
+                            <option value="槍">🗡️ 槍兵</option>
+                            <option value="弓">🏹 弓兵</option>
+                            <option value="騎">🐎 騎兵</option>
+                        </select>
+                    </div>
+
+                    <!-- Slot 2 -->
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                            <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 text-xs flex items-center justify-center font-bold">2</span>
+                            副將1 (Hero 2) 兵種
+                        </label>
+                        <select id="slot2Select" onchange="applySlotFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                            <option value="">不限兵種</option>
+                            <option value="盾">🛡️ 盾兵</option>
+                            <option value="槍">🗡️ 槍兵</option>
+                            <option value="弓">🏹 弓兵</option>
+                            <option value="騎">🐎 騎兵</option>
+                        </select>
+                    </div>
+
+                    <!-- Slot 3 -->
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                            <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 text-xs flex items-center justify-center font-bold">3</span>
+                            副將2 (Hero 3) 兵種
+                        </label>
+                        <select id="slot3Select" onchange="applySlotFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                            <option value="">不限兵種</option>
+                            <option value="盾">🛡️ 盾兵</option>
+                            <option value="槍">🗡️ 槍兵</option>
+                            <option value="弓">🏹 弓兵</option>
+                            <option value="騎">🐎 騎兵</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Troop Filter Results Grid -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold text-slate-300 flex items-center gap-2">
+                        符合兵種條件隊伍 (<span id="troopMatchCount" class="text-amber-400">0</span>)
+                    </h3>
+                </div>
+                <div id="troopResultGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <!-- Cards will be populated here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: 對陣克制速查 (VERSUS) ================= -->
+        <section id="tab-versus" class="hidden space-y-6">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-6">
+                <div>
+                    <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                        <i class="fa-solid fa-swords"></i> 對陣克制關係對照速查
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">選擇我方與敵方隊伍，即時檢視克制性、戰法搭配與勝負關係。</p>
+                </div>
+
+                <!-- Matchup Picker Control Box -->
+                <div class="grid grid-cols-1 md:grid-cols-11 gap-4 items-center bg-slate-950/80 p-5 rounded-xl border border-slate-800">
+                    <!-- My Team Picker -->
+                    <div class="md:col-span-5 space-y-2">
+                        <label class="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                            <i class="fa-solid fa-shield-cat"></i> 我方隊伍 (My Team)
+                        </label>
+                        <select id="vsMyTeamSelect" onchange="calculateMatchup()" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-emerald-500">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <!-- Swap Button -->
+                    <div class="md:col-span-1 flex justify-center py-2 md:py-0">
+                        <button onclick="swapVersusTeams()" class="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 flex items-center justify-center transition shadow-md">
+                            <i class="fa-solid fa-arrows-rotate text-base"></i>
+                        </button>
+                    </div>
+
+                    <!-- Enemy Team Picker -->
+                    <div class="md:col-span-5 space-y-2">
+                        <label class="text-xs font-bold text-rose-400 flex items-center gap-1">
+                            <i class="fa-solid fa-skull-crossbones"></i> 敵方隊伍 (Enemy Team)
+                        </label>
+                        <select id="vsEnemyTeamSelect" onchange="calculateMatchup()" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-rose-500">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Matchup Result Banner -->
+                <div id="versusResultCard" class="bg-slate-950 border border-slate-800 rounded-2xl p-6 text-center space-y-6">
+                    <!-- Dynamic Result output -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 4: CSV管理 & GITHUB 指南 ================= -->
+        <section id="tab-data" class="hidden space-y-6">
+            <!-- Local CSV Upload & Management Panel -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                            <i class="fa-solid fa-file-csv"></i> CSV 數據管理與動態更新
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">上傳本地 CSV 檔案可立即更新系統資料，或匯出目前最新數據。</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="exportCSV()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 border border-slate-700">
+                            <i class="fa-solid fa-download text-amber-400"></i> 匯出 CSV 檔
+                        </button>
+                        <button onclick="restoreDefaultData()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 border border-slate-700">
+                            <i class="fa-solid fa-arrow-rotate-left text-slate-400"></i> 重置預設 S6 數據
+                        </button>
+                    </div>
+                </div>
+
+                <!-- File Drop Zone -->
+                <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-amber-500/60 bg-slate-950/50 rounded-xl p-8 text-center cursor-pointer transition space-y-3">
+                    <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
+                    <div class="w-14 h-14 mx-auto rounded-full bg-slate-800/80 text-amber-400 flex items-center justify-center text-2xl">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-slate-200">點擊上傳或拖曳 CSV 檔案至此</p>
+                        <p class="text-xs text-slate-500 mt-1">支援 standard header [season, tier, name, type1, type2, type3, hero1, hero2, hero3, skill1, skill2, skill3, advantage, disadvantage, winning]</p>
+                    </div>
+                    <button onclick="document.getElementById('csvFileInput').click()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg transition inline-block">
+                        選擇 CSV 檔案
+                    </button>
+                </div>
+            </div>
+
+            <!-- GitHub Deployment Guide Card -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-lg space-y-5">
+                <div class="flex items-center gap-3 border-b border-slate-800 pb-4">
+                    <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 text-xl">
+                        <i class="fa-brands fa-github"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-100">GitHub Pages 上傳與動態更新設定教學</h3>
+                        <p class="text-xs text-slate-400">如何將此網站部署至 GitHub Pages 並透過更改 CSV 來更新網站資料</p>
+                    </div>
+                </div>
+
+                <!-- Step by step instructions -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Step 1 -->
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 font-bold text-xs flex items-center justify-center">1</span>
+                            <h4 class="text-xs font-bold text-slate-200">上傳至 GitHub 儲存庫</h4>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            將本檔命名為 <code class="text-amber-300 bg-slate-900 px-1 py-0.5 rounded">index.html</code>，並將你的 CSV 數據檔命名為 <code class="text-amber-300 bg-slate-900 px-1 py-0.5 rounded">data.csv</code>，一起上傳至 GitHub Repository 根目錄。
+                        </p>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 font-bold text-xs flex items-center justify-center">2</span>
+                            <h4 class="text-xs font-bold text-slate-200">開啟 GitHub Pages</h4>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            進入專案 <code class="text-slate-300">Settings</code> ➔ <code class="text-slate-300">Pages</code>，在 Source 選擇 <code class="text-slate-300">Deploy from a branch</code>，分支選 <code class="text-slate-300">main / root</code> 並儲存。
+                        </p>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 font-bold text-xs flex items-center justify-center">3</span>
+                            <h4 class="text-xs font-bold text-slate-200">日後改檔自動更新</h4>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            未來需要維護隊伍資料時，只需在 GitHub 網站上點擊 <code class="text-amber-300 bg-slate-900 px-1 py-0.5 rounded">data.csv</code> 進行修改或覆蓋，網頁重整即會自動載入最新數據！
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Code Example Box -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-400"><i class="fa-solid fa-folder-tree"></i> Recommended Repository Structure</span>
+                        <span class="text-xs text-amber-400/80">AIRAZEPOL-LGTM Compatible</span>
+                    </div>
+                    <pre class="bg-slate-900 p-3 rounded-lg text-xs font-mono text-amber-200/90 overflow-x-auto">
+my-sgmdtx-repo/
+├── index.html                  (本網頁主程式)
+└── data.csv                    (預設檔案，自動讀取)
+    └── 三謀隊伍克制查詢 - S6W3.csv (備用檔名相容)
+</pre>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal: Team Detail View -->
+    <div id="teamDetailModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-5">
+            <div class="flex items-start justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-3">
+                    <span id="modalSeasonBadge" class="px-2.5 py-1 text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg">S6</span>
+                    <h3 id="modalTeamName" class="text-xl font-bold text-slate-100">隊伍名稱</h3>
+                </div>
+                <button onclick="closeModal('teamDetailModal')" class="text-slate-400 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Content Area -->
+            <div id="modalTeamBody" class="space-y-4">
+                <!-- Dynamically populated -->
+            </div>
+
+            <div class="flex items-center justify-between border-t border-slate-800 pt-4">
+                <button onclick="copyCurrentModalInfo()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition flex items-center gap-2 border border-slate-700">
+                    <i class="fa-regular fa-copy"></i> 複製隊伍配置
+                </button>
+                <button onclick="closeModal('teamDetailModal')" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl transition">
+                    關閉視窗
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add New Team -->
+    <div id="addTeamModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-plus text-amber-400"></i> 新增隊伍資料
+                </h3>
+                <button onclick="closeModal('addTeamModal')" class="text-slate-400 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="addTeamForm" onsubmit="handleAddTeam(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-medium text-slate-300">隊伍名稱 *</label>
+                        <input type="text" id="addName" required placeholder="例如: 薪火槍" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-100">
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-slate-300">賽季 Tag</label>
+                        <input type="text" id="addSeason" value="s6" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-100">
+                    </div>
+                </div>
+
+                <!-- 3 Heroes & Troops -->
+                <div class="space-y-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <span class="text-xs font-bold text-amber-400">武將與兵種配置</span>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <input type="text" id="addHero1" required placeholder="主將姓名" class="w-full mb-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-100">
+                            <select id="addType1" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-xs text-slate-200">
+                                <option value="盾">盾兵</option>
+                                <option value="槍">槍兵</option>
+                                <option value="弓">弓兵</option>
+                                <option value="騎">騎兵</option>
+                            </select>
+                        </div>
+                        <div>
+                            <input type="text" id="addHero2" required placeholder="副將1姓名" class="w-full mb-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-100">
+                            <select id="addType2" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-xs text-slate-200">
+                                <option value="盾">盾兵</option>
+                                <option value="槍">槍兵</option>
+                                <option value="弓">弓兵</option>
+                                <option value="騎">騎兵</option>
+                            </select>
+                        </div>
+                        <div>
+                            <input type="text" id="addHero3" required placeholder="副將2姓名" class="w-full mb-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-slate-100">
+                            <select id="addType3" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-xs text-slate-200">
+                                <option value="盾">盾兵</option>
+                                <option value="槍">槍兵</option>
+                                <option value="弓">弓兵</option>
+                                <option value="騎">騎兵</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skills -->
+                <div class="space-y-2">
+                    <label class="text-xs font-medium text-slate-300">推薦戰法搭配 (Skill 1, Skill 2, Skill 3)</label>
+                    <input type="text" id="addSkill1" placeholder="主將戰法 (例: 勝敵/懲前)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-100 mb-1">
+                    <input type="text" id="addSkill2" placeholder="副將1戰法 (例: 鑄甲/金城)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-100 mb-1">
+                    <input type="text" id="addSkill3" placeholder="副將2戰法 (例: 折衝/踐墨)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-100">
+                </div>
+
+                <!-- Advantage & Disadvantage -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-medium text-emerald-400">克制隊伍 (用頓號、分割)</label>
+                        <textarea id="addAdvantage" rows="2" placeholder="例如: 薪火槍、大漢惇、皇馬盾" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-100"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-rose-400">被克制隊伍 (用頓號、分割)</label>
+                        <textarea id="addDisadvantage" rows="2" placeholder="例如: 備飛延、天災陸" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-100"></textarea>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 border-t border-slate-800 pt-3">
+                    <button type="button" onclick="closeModal('addTeamModal')" class="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-semibold rounded-lg">取消</button>
+                    <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg shadow">儲存隊伍</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        /* S6 Default Embedded Dataset Fallback */
+        const DEFAULT_TEAMS_DATA = [
+            {
+                season: "s6", tier: "-", name: "左田堅",
+                type1: "盾", type2: "弓", type3: "盾",
+                hero1: "左慈", hero2: "田豐", hero3: "孫堅",
+                skill1: "折衝/踐墨/金城", skill2: "戰八/指點/衍·任人/烈火/舍生", skill3: "斬將/銳不",
+                advantage: "薪火槍、大漢惇、皇馬盾、南蠻盾、王異、馬妹、周瑜",
+                disadvantage: "備飛延、天災陸、王雙", winning: ""
+            },
+            {
+                season: "s6", tier: "-", name: "郝薪火",
+                type1: "槍", type2: "盾", type3: "盾",
+                hero1: "姜維", hero2: "郝昭", hero3: "SP諸葛",
+                skill1: "勝敵/懲前", skill2: "衍·輕裝/鑄甲/金城", skill3: "折衝/踐墨/挫銳/巋然",
+                advantage: "南蠻盾、皇馬盾、周瑜",
+                disadvantage: "皇門騎、左田堅、薪火槍、木鹿蠻、馬妹", winning: ""
+            },
+            {
+                season: "s6", tier: "-", name: "先登王雙",
+                type1: "槍", type2: "騎", type3: "騎",
+                hero1: "樂進", hero2: "馬騰", hero3: "王雙",
+                skill1: "戰八/無難/烈火", skill2: "挫銳/捨生", skill3: "橫掃/衍·王佐/銳不",
+                advantage: "呂布、孫堅、張遼、馬妹、王異",
+                disadvantage: "南蠻盾、周瑜", winning: ""
+            },
+            {
+                season: "s6", tier: "-", name: "皇門騎/皇門呂",
+                type1: "弓", type2: "盾", type3: "騎",
+                hero1: "陳宮", hero2: "皇甫嵩", hero3: "呂布",
+                skill1: "折衝/百戰/捨生/披堅", skill2: "固若/踐墨/忘私/步步", skill3: "攻其/三軍/衍·轅門/鏡·謀而",
+                advantage: "郝薪火、左田堅、主動隊、南蠻盾",
+                disadvantage: "追擊隊、反擊隊、周瑜", winning: ""
+            },
+            {
+                season: "s6", tier: "-", name: "備飛延",
+                type1: "盾", type2: "盾", type3: "槍",
+                hero1: "劉備", hero2: "魏延", hero3: "張飛",
+                skill1: "挫銳/瞋目", skill2: "勝敵/蹈鋒", skill3: "戰八/衍·輕裝",
+                advantage: "薪火、內戰、陸遜、司馬懿、夏侯異、呂布、快攻",
+                disadvantage: "諸葛蠻、趙甘", winning: ""
+            },
+            {
+                season: "s6", tier: "-", name: "SP諸葛南蠻盾",
+                type1: "騎", type2: "盾", type3: "盾",
+                hero1: "祝融", hero2: "孟獲", hero3: "SP諸葛",
+                skill1: "勝敵/衍·王佐/銳不", skill2: "指點/蹈鋒/步步", skill3: "折衝/踐墨/衍·清風",
+                advantage: "魏延、張遼、王雙、左田堅、周瑜、快攻、薪火、南蠻內戰",
+                disadvantage: "郝薪火、孫陸陸、皇馬盾、惇皇異", winning: ""
+            },
+            {
+                season: "s6", tier: "-", name: "泰飛延",
+                type1: "盾", type2: "槍", type3: "盾",
+                hero1: "周泰", hero2: "張飛", hero3: "魏延",
+                skill1: "橫征/蹈鋒", skill2: "戰八/避其", skill3: "勝敵/銳不/衍·王佐",
+                advantage: "左田堅、張遼、皇門騎、孫陸陸、司馬懿",
+                disadvantage: "薪火、周瑜、大漢惇、夏侯異、南蠻", winning: ""
+            },
+            {
+                season: "s6", tier: "-", name: "皇馬盾",
+                type1: "盾", type2: "盾", type3: "盾",
+                hero1: "司馬懿", hero2: "郝昭", hero3: "皇甫嵩",
+                skill1: "未雨/潛龍/拔刀", skill2: "衍·輕裝/金城/步步", skill3: "巋然/百戰/忘私",
+                advantage: "南蠻盾、天災陸遜、趙雲、主動、太史慈",
+                disadvantage: "周瑜、皇門騎、魏延、馬超、追擊", winning: ""
+            },
+            {
+                season: "s6", tier: "-", name: "先登遼",
+                type1: "槍", type2: "騎", type3: "騎",
+                hero1: "樂進", hero2: "馬騰", hero3: "張遼",
+                skill1: "戰八/無難/斷戈/十面", skill2: "挫銳/捨生/披堅", skill3: "鐵騎/兵貴",
+                advantage: "呂布、曹荀異、陸遜",
+                disadvantage: "南蠻盾、郝薪火、周瑜、魏延、趙甘姜、惇皇異、孫堅", winning: ""
+            },
+            {
+                season: "s6", tier: "-", name: "惇皇異/夏侯異",
+                type1: "騎", type2: "盾", type3: "槍",
+                hero1: "夏侯惇", hero2: "曹操", hero3: "王異",
+                skill1: "步步/衍·任人/挫銳/踐墨", skill2: "折衝/踐墨/空城/衍·任人", skill3: "運智/謀而",
+                advantage: "皇門騎、趙甘姜、泰飛延、張遼、周瑜、漢盾",
+                disadvantage: "薪火槍、惇曹懿、孫堅", winning: ""
+            },
+            {
+                season: "s6", tier: "-", name: "百爆周瑜",
+                type1: "弓", type2: "弓", type3: "弓",
+                hero1: "諸葛瑾", hero2: "周瑜", hero3: "荀彧",
+                skill1: "踐墨/蹈鋒", skill2: "機變/勝敵/王佐", skill3: "衍·輕裝/折衝/避其/狂風/風助",
+                advantage: "追擊隊、皇馬盾、孫陸陸",
+                disadvantage: "南蠻盾、薪火槍、馬超、大漢惇", winning: ""
+            },
+            {
+                season: "s6", tier: "-", name: "趙甘姜",
+                type1: "弓", type2: "騎", type3: "槍",
+                hero1: "甘夫人", hero2: "趙雲", hero3: "姜維",
+                skill1: "折衝/避其/步步/調和/金城/衍·清風", skill2: "掠陣/銳不/潛龍/摧艱", skill3: "勝敵/衍·清風/折衝/調和/洗筋",
+                advantage: "魏延、周瑜、張遼、高頻",
+                disadvantage: "左田堅、陸遜、司馬", winning: ""
+            },
+            {
+                season: "s6", tier: "-", name: "關諸馬",
+                type1: "騎", type2: "盾", type3: "騎",
+                hero1: "馬超", hero2: "SP諸葛", hero3: "關銀屏",
+                skill1: "摧堅/衍·王佐/勝敵", skill2: "折衝/踐墨/挫銳", skill3: "戰八/指點",
+                advantage: "司馬、周瑜",
+                disadvantage: "南蠻盾、張遼、左田堅", winning: ""
+            },
+            {
+                season: "s6", tier: "-", name: "惇曹懿",
+                type1: "騎", type2: "盾", type3: "盾",
+                hero1: "夏侯惇", hero2: "曹操", hero3: "司馬懿",
+                skill1: "步步/踐墨", skill2: "折衝/衍·任人", skill3: "未雨/潛龍",
+                advantage: "-", disadvantage: "-", winning: ""
+            }
+        ];
+
+        /* Global Application State */
+        let teamsData = [];
+        let activeTroopFilter = 'all'; // 'all', '盾', '槍', '弓', '騎'
+        let currentModalTeam = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initApp();
+            setupDragAndDrop();
         });
 
-    // 動態萃取 S5 兵種，遇到 "槍/弓" 會自動拆分成獨立的 "槍" 和 "弓"
-    function populateTroopDropdowns(data) {
-        let troopsSet = new Set();
-        data.forEach(team => {
-            [team.special1, team.special2, team.special3].forEach(spec => {
-                if (spec) {
-                    // 以斜線切割字串，並移除多餘空白
-                    spec.toString().split('/').forEach(t => {
-                        let cleanTroop = t.trim();
-                        if (cleanTroop) troopsSet.add(cleanTroop);
-                    });
-                }
-            });
-        });
-
-        let sortedTroops = Array.from(troopsSet).sort();
-        
-        ['troop1', 'troop2', 'troop3'].forEach(selectId => {
-            let selectElement = document.getElementById(selectId);
-            sortedTroops.forEach(troop => {
-                let option = document.createElement('option');
-                option.value = troop;
-                option.text = troop;
-                selectElement.appendChild(option);
-            });
-        });
-    }
-
-    function clearFilters() {
-        document.getElementById('searchInput').value = '';
-        document.getElementById('troop1').value = '';
-        document.getElementById('troop2').value = '';
-        document.getElementById('troop3').value = '';
-        filterTeams();
-    }
-
-    function displayTeams(teams) {
-        const resultsDiv = document.getElementById('results');
-        resultsDiv.innerHTML = '';
-
-        if(teams.length === 0) {
-            resultsDiv.innerHTML = '<p style="text-align:center; color:#999; margin-top:20px;">找不到符合此組合的隊伍。</p>';
-            return;
+        // Application Initialization
+        async function initApp() {
+            // Attempt to fetch local CSV or external CSV if hosted
+            const loadedFromCsv = await tryFetchCSV();
+            if (!loadedFromCsv) {
+                teamsData = [...DEFAULT_TEAMS_DATA];
+            }
+            
+            updateStatsBar();
+            renderTeamList();
+            renderPresetComboChips();
+            populateVersusDropdowns();
+            calculateMatchup();
         }
 
-        teams.forEach(team => {
-            const card = document.createElement('div');
-            card.className = 'team-card';
-            
-            // 合併顯示武將，過濾掉空的欄位
-            const heroList = [team.hero1, team.hero2, team.hero3].filter(h => h && h.trim() !== '').join(' / ');
-            // 兵種顯示
-            const troopList = [team.special1, team.special2, team.special3].filter(t => t && t.trim() !== '').join(' / ');
+        // Try fetching ./data.csv or alternative filename
+        async function tryFetchCSV() {
+            const possibleFiles = ['./data.csv', './三謀隊伍克制查詢 - S6W3.csv'];
+            for (let file of possibleFiles) {
+                try {
+                    const response = await fetch(file);
+                    if (response.ok) {
+                        const csvText = await response.text();
+                        parseAndSetCSVData(csvText);
+                        showToast(`已成功從 ${file} 自動載入最新隊伍數據！`, 'success');
+                        return true;
+                    }
+                } catch (e) {
+                    // Fetch failed, try next
+                }
+            }
+            return false;
+        }
 
-            // 如果欄位為空就不顯示，保持卡片乾淨
-            let matchupGoodHTML = team['優'] && team['優'].trim() !== '' ? `<div>${team['優']}</div>` : `<div style="color:#aaa;">無資料</div>`;
-            let matchupBadHTML = team['劣'] && team['劣'].trim() !== '' ? `<div>${team['劣']}</div>` : `<div style="color:#aaa;">無資料</div>`;
+        function parseAndSetCSVData(csvText) {
+            Papa.parse(csvText, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if (results.data && results.data.length > 0) {
+                        teamsData = results.data.map(item => ({
+                            season: item.season || 's6',
+                            tier: item.tier || '-',
+                            name: item.name || '未知隊伍',
+                            type1: item.type1 || '盾',
+                            type2: item.type2 || '盾',
+                            type3: item.type3 || '盾',
+                            hero1: item.hero1 || '',
+                            hero2: item.hero2 || '',
+                            hero3: item.hero3 || '',
+                            skill1: item.skill1 || '',
+                            skill2: item.skill2 || '',
+                            skill3: item.skill3 || '',
+                            advantage: item.advantage || '',
+                            disadvantage: item.disadvantage || '',
+                            winning: item.winning || ''
+                        }));
+                        updateAllViews();
+                    }
+                }
+            });
+        }
+
+        function updateAllViews() {
+            updateStatsBar();
+            renderTeamList();
+            renderPresetComboChips();
+            applySlotFilters();
+            populateVersusDropdowns();
+            calculateMatchup();
+        }
+
+        /* Stats calculation */
+        function updateStatsBar() {
+            document.getElementById('statTotalTeams').innerText = teamsData.length;
+            
+            const shieldCount = teamsData.filter(t => [t.type1, t.type2, t.type3].includes('盾')).length;
+            const spearCount = teamsData.filter(t => [t.type1, t.type2, t.type3].includes('槍')).length;
+            const bowCount = teamsData.filter(t => [t.type1, t.type2, t.type3].includes('弓')).length;
+            const cavalryCount = teamsData.filter(t => [t.type1, t.type2, t.type3].includes('騎')).length;
+
+            document.getElementById('statShieldTeams').innerText = shieldCount;
+            document.getElementById('statSpearTeams').innerText = spearCount;
+            document.getElementById('statBowTeams').innerText = bowCount;
+            document.getElementById('statCavalryTeams').innerText = cavalryCount;
+        }
+
+        function switchTab(tabName) {
+            ['list', 'troop', 'versus', 'data'].forEach(tab => {
+                const section = document.getElementById(`tab-${tab}`);
+                const navBtn = document.getElementById(`nav-tab-${tab}`);
+                if (tab === tabName) {
+                    section.classList.remove('hidden');
+                    if(navBtn) {
+                        navBtn.className = "nav-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 text-amber-400 bg-slate-800 border border-amber-500/30";
+                    }
+                } else {
+                    section.classList.add('hidden');
+                    if(navBtn) {
+                        navBtn.className = "nav-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 text-slate-300 hover:bg-slate-800";
+                    }
+                }
+            });
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        function getTroopBadgeHTML(troopType) {
+            switch(troopType) {
+                case '盾':
+                    return `<span class="px-2 py-0.5 rounded text-xs font-bold bg-sky-950 text-sky-400 border border-sky-500/40 flex items-center gap-1"><i class="fa-solid fa-shield text-[10px]"></i> 盾</span>`;
+                case '槍':
+                    return `<span class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-950 text-emerald-400 border border-emerald-500/40 flex items-center gap-1"><i class="fa-solid fa-location-crosshairs text-[10px]"></i> 槍</span>`;
+                case '弓':
+                    return `<span class="px-2 py-0.5 rounded text-xs font-bold bg-amber-950 text-amber-400 border border-amber-500/40 flex items-center gap-1"><i class="fa-solid fa-bow-arrow text-[10px]"></i> 弓</span>`;
+                case '騎':
+                    return `<span class="px-2 py-0.5 rounded text-xs font-bold bg-rose-950 text-rose-400 border border-rose-500/40 flex items-center gap-1"><i class="fa-solid fa-horse text-[10px]"></i> 騎</span>`;
+                default:
+                    return `<span class="px-2 py-0.5 rounded text-xs font-bold bg-slate-800 text-slate-400">${troopType}</span>`;
+            }
+        }
+
+        function getTroopCompositionSummary(t) {
+            const counts = {};
+            [t.type1, t.type2, t.type3].forEach(type => {
+                if(type) counts[type] = (counts[type] || 0) + 1;
+            });
+            return Object.entries(counts)
+                .map(([type, cnt]) => `${cnt}${type}`)
+                .join(' ');
+        }
+
+        function renderTeamList() {
+            const searchVal = document.getElementById('globalSearchInput').value.trim().toLowerCase();
+            const grid = document.getElementById('teamsGrid');
+            const emptyState = document.getElementById('emptySearchState');
+            const clearBtn = document.getElementById('clearSearchBtn');
+
+            if (searchVal) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+
+            const filtered = teamsData.filter(team => {
+                // Troop filter check
+                if (activeTroopFilter !== 'all') {
+                    if (![team.type1, team.type2, team.type3].includes(activeTroopFilter)) {
+                        return false;
+                    }
+                }
+
+                if (!searchVal) return true;
+
+                const matchName = team.name.toLowerCase().includes(searchVal);
+                const matchHeroes = (team.hero1 + team.hero2 + team.hero3).toLowerCase().includes(searchVal);
+                const matchSkills = (team.skill1 + team.skill2 + team.skill3).toLowerCase().includes(searchVal);
+                const matchAdv = team.advantage.toLowerCase().includes(searchVal);
+                const matchDisadv = team.disadvantage.toLowerCase().includes(searchVal);
+
+                return matchName || matchHeroes || matchSkills || matchAdv || matchDisadv;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            grid.innerHTML = filtered.map(team => createTeamCardHTML(team)).join('');
+        }
+
+        function createTeamCardHTML(team) {
+            const compSummary = getTroopCompositionSummary(team);
+            
+            // Generate Clickable Advantage Chips
+            const advChips = team.advantage && team.advantage !== '-' ? 
+                team.advantage.split('、').map(item => item.trim()).filter(Boolean).map(item => 
+                    `<button onclick="quickFilterTeam('${escapeJS(item)}')" class="px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/30 transition">${item}</button>`
+                ).join(' ') : '<span class="text-xs text-slate-500">無或未登錄</span>';
+
+            // Generate Clickable Disadvantage Chips
+            const disadvChips = team.disadvantage && team.disadvantage !== '-' ? 
+                team.disadvantage.split('、').map(item => item.trim()).filter(Boolean).map(item => 
+                    `<button onclick="quickFilterTeam('${escapeJS(item)}')" class="px-2 py-0.5 rounded text-[11px] font-medium bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-500/30 transition">${item}</button>`
+                ).join(' ') : '<span class="text-xs text-slate-500">無或未登錄</span>';
+
+            return `
+            <div class="bg-slate-900/90 border border-slate-800 hover:border-amber-500/40 rounded-2xl p-5 card-hover flex flex-col justify-between space-y-4 shadow-md">
+                <!-- Card Header -->
+                <div class="space-y-3">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-md">
+                                    ${team.season.toUpperCase()}
+                                </span>
+                                <h3 class="font-bold text-slate-100 text-base tracking-wide">${escapeHTML(team.name)}</h3>
+                            </div>
+                            <span class="text-[11px] text-slate-400 font-medium block mt-1">
+                                <i class="fa-solid fa-layer-group text-amber-400/80"></i> 兵種組合: <span class="text-slate-200 font-semibold">${compSummary}</span>
+                            </span>
+                        </div>
+                        <button onclick="openTeamModal('${escapeJS(team.name)}')" class="text-slate-400 hover:text-amber-400 p-1 transition" title="放大檢視詳細配置">
+                            <i class="fa-solid fa-up-right-from-square text-sm"></i>
+                        </button>
+                    </div>
+
+                    <!-- 3 Heroes Grid -->
+                    <div class="grid grid-cols-3 gap-2 bg-slate-950/70 p-2.5 rounded-xl border border-slate-800/80">
+                        <div class="text-center space-y-1">
+                            <div class="text-[10px] text-slate-400 font-medium">主將</div>
+                            <div class="text-xs font-bold text-slate-200 truncate">${escapeHTML(team.hero1)}</div>
+                            <div class="flex justify-center">${getTroopBadgeHTML(team.type1)}</div>
+                        </div>
+                        <div class="text-center space-y-1 border-x border-slate-800">
+                            <div class="text-[10px] text-slate-400 font-medium">副將1</div>
+                            <div class="text-xs font-bold text-slate-200 truncate">${escapeHTML(team.hero2)}</div>
+                            <div class="flex justify-center">${getTroopBadgeHTML(team.type2)}</div>
+                        </div>
+                        <div class="text-center space-y-1">
+                            <div class="text-[10px] text-slate-400 font-medium">副將2</div>
+                            <div class="text-xs font-bold text-slate-200 truncate">${escapeHTML(team.hero3)}</div>
+                            <div class="flex justify-center">${getTroopBadgeHTML(team.type3)}</div>
+                        </div>
+                    </div>
+
+                    <!-- Recommended Skills -->
+                    <div class="space-y-1.5 pt-1">
+                        <div class="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+                            <i class="fa-solid fa-book-bookmark text-amber-400 text-[10px]"></i> 推薦戰法搭配
+                        </div>
+                        <div class="space-y-1 text-xs text-slate-300">
+                            <div class="truncate"><span class="text-slate-400 font-medium">${escapeHTML(team.hero1)}:</span> ${escapeHTML(team.skill1 || '-')}</div>
+                            <div class="truncate"><span class="text-slate-400 font-medium">${escapeHTML(team.hero2)}:</span> ${escapeHTML(team.skill2 || '-')}</div>
+                            <div class="truncate"><span class="text-slate-400 font-medium">${escapeHTML(team.hero3)}:</span> ${escapeHTML(team.skill3 || '-')}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Footer: Advantage / Disadvantage Tags -->
+                <div class="space-y-2 border-t border-slate-800/80 pt-3">
+                    <div>
+                        <div class="text-[10px] font-bold text-emerald-400 flex items-center gap-1 mb-1">
+                            <i class="fa-solid fa-circle-check"></i> 克制 (Advantage)
+                        </div>
+                        <div class="flex flex-wrap gap-1">${advChips}</div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold text-rose-400 flex items-center gap-1 mb-1">
+                            <i class="fa-solid fa-triangle-exclamation"></i> 被克 (Disadvantage)
+                        </div>
+                        <div class="flex flex-wrap gap-1">${disadvChips}</div>
+                    </div>
+                    
+                    <!-- Quick Action -->
+                    <div class="pt-2 flex items-center justify-between">
+                        <button onclick="launchVersus('${escapeJS(team.name)}')" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5 border border-slate-700">
+                            <i class="fa-solid fa-swords text-amber-400"></i> 對陣測試
+                        </button>
+                    </div>
+                </div>
+            </div>
+            `;
+        }
+
+        function renderPresetComboChips() {
+            const container = document.getElementById('presetComboContainer');
+            // Discover unique combinations in data
+            const combos = new Set();
+            teamsData.forEach(t => {
+                const arr = [t.type1, t.type2, t.type3].sort();
+                combos.add(arr.join(''));
+            });
+
+            // Map combo strings into friendly names like 3盾, 2盾1槍
+            const comboList = Array.from(combos).map(str => {
+                const count = {};
+                for (let char of str) count[char] = (count[char] || 0) + 1;
+                const formatted = Object.entries(count).map(([type, cnt]) => `${cnt}${type}`).join('');
+                return { raw: str, formatted: formatted };
+            });
+
+            container.innerHTML = `
+                <button onclick="filterByPresetCombo('all')" class="px-3 py-1 rounded-lg text-xs font-semibold bg-amber-500 text-slate-950 hover:bg-amber-400 transition">顯示全部</button>
+                ${comboList.map(c => `
+                    <button onclick="filterByPresetCombo('${c.raw}')" class="px-3 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-200 border border-slate-700 hover:border-amber-500 transition">
+                        ${c.formatted}
+                    </button>
+                `).join('')}
+            `;
+        }
+
+        function filterByPresetCombo(rawCombo) {
+            if (rawCombo === 'all') {
+                document.getElementById('slot1Select').value = '';
+                document.getElementById('slot2Select').value = '';
+                document.getElementById('slot3Select').value = '';
+                applySlotFilters();
+                return;
+            }
+
+            const results = teamsData.filter(team => {
+                const arr = [team.type1, team.type2, team.type3].sort().join('');
+                return arr === rawCombo;
+            });
+
+            renderTroopResults(results);
+        }
+
+        function applySlotFilters() {
+            const s1 = document.getElementById('slot1Select').value;
+            const s2 = document.getElementById('slot2Select').value;
+            const s3 = document.getElementById('slot3Select').value;
+
+            const filtered = teamsData.filter(t => {
+                if (s1 && t.type1 !== s1) return false;
+                if (s2 && t.type2 !== s2) return false;
+                if (s3 && t.type3 !== s3) return false;
+                return true;
+            });
+
+            renderTroopResults(filtered);
+        }
+
+        function renderTroopResults(list) {
+            const grid = document.getElementById('troopResultGrid');
+            document.getElementById('troopMatchCount').innerText = list.length;
+
+            if (list.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12 bg-slate-900/50 rounded-2xl border border-slate-800 text-slate-400">
+                        <i class="fa-solid fa-filter-circle-xmark text-3xl mb-2 text-slate-500 block"></i>
+                        無符合該兵種組合的隊伍
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = list.map(t => createTeamCardHTML(t)).join('');
+        }
+
+        function resetTroopCombos() {
+            document.getElementById('slot1Select').value = '';
+            document.getElementById('slot2Select').value = '';
+            document.getElementById('slot3Select').value = '';
+            applySlotFilters();
+            showToast('已重置兵種篩選條件');
+        }
+
+        function populateVersusDropdowns() {
+            const mySelect = document.getElementById('vsMyTeamSelect');
+            const enemySelect = document.getElementById('vsEnemyTeamSelect');
+
+            const optionsHTML = teamsData.map(t => `<option value="${escapeHTML(t.name)}">${escapeHTML(t.name)} (${getTroopCompositionSummary(t)})</option>`).join('');
+            
+            mySelect.innerHTML = optionsHTML;
+            enemySelect.innerHTML = optionsHTML;
+
+            if (teamsData.length > 1) {
+                enemySelect.selectedIndex = 1;
+            }
+        }
+
+        function swapVersusTeams() {
+            const mySelect = document.getElementById('vsMyTeamSelect');
+            const enemySelect = document.getElementById('vsEnemyTeamSelect');
+
+            const temp = mySelect.value;
+            mySelect.value = enemySelect.value;
+            enemySelect.value = temp;
+
+            calculateMatchup();
+        }
+
+        function launchVersus(teamName) {
+            switchTab('versus');
+            const mySelect = document.getElementById('vsMyTeamSelect');
+            mySelect.value = teamName;
+            calculateMatchup();
+        }
+
+        function calculateMatchup() {
+            const myName = document.getElementById('vsMyTeamSelect').value;
+            const enemyName = document.getElementById('vsEnemyTeamSelect').value;
+            const card = document.getElementById('versusResultCard');
+
+            const myTeam = teamsData.find(t => t.name === myName);
+            const enemyTeam = teamsData.find(t => t.name === enemyName);
+
+            if (!myTeam || !enemyTeam) return;
+
+            // Check if myTeam counters enemyTeam
+            const myAdvList = myTeam.advantage.split('、').map(s => s.trim().toLowerCase());
+            const myDisadvList = myTeam.disadvantage.split('、').map(s => s.trim().toLowerCase());
+
+            const isAdvantage = myAdvList.some(item => enemyName.toLowerCase().includes(item) || item.includes(enemyName.toLowerCase()));
+            const isDisadvantage = myDisadvList.some(item => enemyName.toLowerCase().includes(item) || item.includes(enemyName.toLowerCase()));
+
+            let statusHTML = '';
+            if (isAdvantage && !isDisadvantage) {
+                statusHTML = `
+                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-base font-bold">
+                        <i class="fa-solid fa-trophy"></i> 優勢克制 (My Team Advantage)
+                    </div>
+                    <p class="text-xs text-slate-300 mt-2">『${escapeHTML(myTeam.name)}』 在克制清單中涵蓋 『${escapeHTML(enemyTeam.name)}』 或其關鍵組件。</p>
+                `;
+            } else if (isDisadvantage && !isAdvantage) {
+                statusHTML = `
+                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-400 text-base font-bold">
+                        <i class="fa-solid fa-triangle-exclamation"></i> 劣勢被克 (Enemy Team Advantage)
+                    </div>
+                    <p class="text-xs text-slate-300 mt-2">『${escapeHTML(myTeam.name)}』 屬於 『${escapeHTML(enemyTeam.name)}』 的被克制對象，對陣時需特別留意！</p>
+                `;
+            } else {
+                statusHTML = `
+                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800 border border-slate-700 text-amber-300 text-base font-bold">
+                        <i class="fa-solid fa-scale-balanced"></i> 勢均力敵 / 未確定克制 (Neutral Matchup)
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2">兩隊之間未有直接的顯性克制紀錄，勝負主要取決於紅度、紅技與戰法精煉發揮。</p>
+                `;
+            }
 
             card.innerHTML = `
-                <div class="team-name">${team.name}</div>
-                ${heroList ? `<div class="heroes">武將組合：${heroList}</div>` : ''}
-                ${troopList ? `<div class="troops">兵種：${troopList}</div>` : ''}
-                <div class="matchup">
-                    <div class="good-against">
-                        <div class="title-good">⚔️ 優勢對局</div>
-                        ${matchupGoodHTML}
+                ${statusHTML}
+
+                <!-- Side-by-Side Comparison Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left pt-4 border-t border-slate-800/80">
+                    <!-- My Team Side -->
+                    <div class="bg-slate-900/90 p-4 rounded-xl border border-emerald-500/30 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-emerald-400">我方: ${escapeHTML(myTeam.name)}</span>
+                            <span class="text-[11px] text-slate-400 font-medium">${getTroopCompositionSummary(myTeam)}</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1 bg-slate-950 p-2 rounded-lg text-center text-xs">
+                            <div><div class="text-[10px] text-slate-500">主將</div><div class="font-bold text-slate-200 truncate">${escapeHTML(myTeam.hero1)}</div></div>
+                            <div><div class="text-[10px] text-slate-500">副將1</div><div class="font-bold text-slate-200 truncate">${escapeHTML(myTeam.hero2)}</div></div>
+                            <div><div class="text-[10px] text-slate-500">副將2</div><div class="font-bold text-slate-200 truncate">${escapeHTML(myTeam.hero3)}</div></div>
+                        </div>
+                        <div class="text-xs space-y-1 text-slate-300">
+                            <div><span class="text-slate-500 font-medium">優勢克制:</span> ${escapeHTML(myTeam.advantage || '無')}</div>
+                            <div><span class="text-slate-500 font-medium">被克制隊:</span> ${escapeHTML(myTeam.disadvantage || '無')}</div>
+                        </div>
                     </div>
-                    <div class="bad-against">
-                        <div class="title-bad">🛡️ 劣勢對局</div>
-                        ${matchupBadHTML}
+
+                    <!-- Enemy Team Side -->
+                    <div class="bg-slate-900/90 p-4 rounded-xl border border-rose-500/30 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-rose-400">敵方: ${escapeHTML(enemyTeam.name)}</span>
+                            <span class="text-[11px] text-slate-400 font-medium">${getTroopCompositionSummary(enemyTeam)}</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1 bg-slate-950 p-2 rounded-lg text-center text-xs">
+                            <div><div class="text-[10px] text-slate-500">主將</div><div class="font-bold text-slate-200 truncate">${escapeHTML(enemyTeam.hero1)}</div></div>
+                            <div><div class="text-[10px] text-slate-500">副將1</div><div class="font-bold text-slate-200 truncate">${escapeHTML(enemyTeam.hero2)}</div></div>
+                            <div><div class="text-[10px] text-slate-500">副將2</div><div class="font-bold text-slate-200 truncate">${escapeHTML(enemyTeam.hero3)}</div></div>
+                        </div>
+                        <div class="text-xs space-y-1 text-slate-300">
+                            <div><span class="text-slate-500 font-medium">優勢克制:</span> ${escapeHTML(enemyTeam.advantage || '無')}</div>
+                            <div><span class="text-slate-500 font-medium">被克制隊:</span> ${escapeHTML(enemyTeam.disadvantage || '無')}</div>
+                        </div>
                     </div>
                 </div>
             `;
-            resultsDiv.appendChild(card);
-        });
-    }
+        }
 
-    function filterTeams() {
-        const query = document.getElementById('searchInput').value.toLowerCase();
-        const t1 = document.getElementById('troop1').value;
-        const t2 = document.getElementById('troop2').value;
-        const t3 = document.getElementById('troop3').value;
+        function setupDragAndDrop() {
+            const dropZone = document.getElementById('dropZone');
 
-        const filtered = teamData.filter(team => {
-            // 文字搜尋
-            const textMatch = (team.name && team.name.toLowerCase().includes(query)) ||
-                              (team.hero1 && team.hero1.toLowerCase().includes(query)) ||
-                              (team.hero2 && team.hero2.toLowerCase().includes(query)) ||
-                              (team.hero3 && team.hero3.toLowerCase().includes(query));
-            
-            // 兵種無序比對 (支援複合兵種解析)
-            let requiredTroops = [t1, t2, t3].filter(t => t !== "");
-            
-            // 將每個欄位的兵種拆開變成陣列的陣列：例如 [['槍','弓'], ['盾'], ['騎']]
-            let teamTroopsSlots = [
-                team.special1 ? team.special1.toString().split('/').map(s => s.trim()) : [],
-                team.special2 ? team.special2.toString().split('/').map(s => s.trim()) : [],
-                team.special3 ? team.special3.toString().split('/').map(s => s.trim()) : []
-            ];
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, false);
+            });
 
-            let troopMatch = true;
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.classList.add('border-amber-500');
+            });
 
-            // 對於每一個使用者指定的兵種需求
-            for (let req of requiredTroops) {
-                // 找尋這個兵種是否存在於隊伍的任何一個尚未被分配的武將槽位中
-                let foundIndex = teamTroopsSlots.findIndex(slot => slot.includes(req));
-                if (foundIndex !== -1) {
-                    // 如果找到了，就把這個槽位從可匹配的陣列中移除，避免重複使用
-                    // (例如: 使用者選了兩個"槍"，隊伍必須在兩個不同的槽位都有"槍"才符合)
-                    teamTroopsSlots.splice(foundIndex, 1); 
-                } else {
-                    troopMatch = false;
-                    break;
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.classList.remove('border-amber-500');
+            });
+
+            dropZone.addEventListener('drop', e => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length) {
+                    processCSVFile(files[0]);
                 }
+            });
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                processCSVFile(file);
+            }
+        }
+
+        function processCSVFile(file) {
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if (results.data && results.data.length > 0) {
+                        teamsData = results.data.map(item => ({
+                            season: item.season || 's6',
+                            tier: item.tier || '-',
+                            name: item.name || '自訂隊伍',
+                            type1: item.type1 || '盾',
+                            type2: item.type2 || '盾',
+                            type3: item.type3 || '盾',
+                            hero1: item.hero1 || '',
+                            hero2: item.hero2 || '',
+                            hero3: item.hero3 || '',
+                            skill1: item.skill1 || '',
+                            skill2: item.skill2 || '',
+                            skill3: item.skill3 || '',
+                            advantage: item.advantage || '',
+                            disadvantage: item.disadvantage || '',
+                            winning: item.winning || ''
+                        }));
+                        updateAllViews();
+                        showToast(`已成功載入上傳的 CSV 檔案 (共 ${teamsData.length} 隊)！`, 'success');
+                    } else {
+                        showToast('CSV 檔案解析失敗或無資料', 'error');
+                    }
+                }
+            });
+        }
+
+        function exportCSV() {
+            const csv = Papa.unparse(teamsData);
+            const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `三謀隊伍克制數據_Export_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('已開始下載最新 CSV 檔案！');
+        }
+
+        function restoreDefaultData() {
+            teamsData = [...DEFAULT_TEAMS_DATA];
+            updateAllViews();
+            showToast('已重置回預設 S6 隊伍資料！');
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function openTeamModal(teamName) {
+            const team = teamsData.find(t => t.name === teamName);
+            if (!team) return;
+
+            currentModalTeam = team;
+            document.getElementById('modalTeamName').innerText = team.name;
+            document.getElementById('modalSeasonBadge').innerText = team.season.toUpperCase();
+
+            const body = document.getElementById('modalTeamBody');
+            body.innerHTML = `
+                <div class="grid grid-cols-3 gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800 text-center">
+                    <div>
+                        <div class="text-xs text-slate-400">主將 (Hero 1)</div>
+                        <div class="font-bold text-slate-100 text-sm mt-0.5">${escapeHTML(team.hero1)}</div>
+                        <div class="flex justify-center mt-1">${getTroopBadgeHTML(team.type1)}</div>
+                    </div>
+                    <div class="border-x border-slate-800">
+                        <div class="text-xs text-slate-400">副將1 (Hero 2)</div>
+                        <div class="font-bold text-slate-100 text-sm mt-0.5">${escapeHTML(team.hero2)}</div>
+                        <div class="flex justify-center mt-1">${getTroopBadgeHTML(team.type2)}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400">副將2 (Hero 3)</div>
+                        <div class="font-bold text-slate-100 text-sm mt-0.5">${escapeHTML(team.hero3)}</div>
+                        <div class="flex justify-center mt-1">${getTroopBadgeHTML(team.type3)}</div>
+                    </div>
+                </div>
+
+                <div class="space-y-2 bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider"><i class="fa-solid fa-scroll"></i> 推薦戰法與搭配</h4>
+                    <div class="space-y-1.5 text-xs text-slate-200">
+                        <div><strong class="text-amber-300/80">${escapeHTML(team.hero1)}:</strong> ${escapeHTML(team.skill1 || '未登錄')}</div>
+                        <div><strong class="text-amber-300/80">${escapeHTML(team.hero2)}:</strong> ${escapeHTML(team.skill2 || '未登錄')}</div>
+                        <div><strong class="text-amber-300/80">${escapeHTML(team.hero3)}:</strong> ${escapeHTML(team.skill3 || '未登錄')}</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="bg-emerald-950/30 border border-emerald-500/30 p-3 rounded-xl space-y-1">
+                        <div class="text-xs font-bold text-emerald-400"><i class="fa-solid fa-circle-check"></i> 克制優勢隊伍</div>
+                        <p class="text-xs text-slate-200 leading-relaxed">${escapeHTML(team.advantage || '無描述')}</p>
+                    </div>
+                    <div class="bg-rose-950/30 border border-rose-500/30 p-3 rounded-xl space-y-1">
+                        <div class="text-xs font-bold text-rose-400"><i class="fa-solid fa-triangle-exclamation"></i> 被克制劣勢隊伍</div>
+                        <p class="text-xs text-slate-200 leading-relaxed">${escapeHTML(team.disadvantage || '無描述')}</p>
+                    </div>
+                </div>
+            `;
+
+            openModal('teamDetailModal');
+        }
+
+        function handleAddTeam(e) {
+            e.preventDefault();
+            const newTeam = {
+                season: document.getElementById('addSeason').value || 's6',
+                tier: '-',
+                name: document.getElementById('addName').value.trim(),
+                type1: document.getElementById('addType1').value,
+                type2: document.getElementById('addType2').value,
+                type3: document.getElementById('addType3').value,
+                hero1: document.getElementById('addHero1').value.trim(),
+                hero2: document.getElementById('addHero2').value.trim(),
+                hero3: document.getElementById('addHero3').value.trim(),
+                skill1: document.getElementById('addSkill1').value.trim(),
+                skill2: document.getElementById('addSkill2').value.trim(),
+                skill3: document.getElementById('addSkill3').value.trim(),
+                advantage: document.getElementById('addAdvantage').value.trim(),
+                disadvantage: document.getElementById('addDisadvantage').value.trim(),
+                winning: ''
+            };
+
+            teamsData.unshift(newTeam);
+            updateAllViews();
+            closeModal('addTeamModal');
+            showToast(`已成功新增隊伍 『${newTeam.name}』！`, 'success');
+            document.getElementById('addTeamForm').reset();
+        }
+
+        function setTroopFilter(type) {
+            activeTroopFilter = type;
+            const notice = document.getElementById('activeFilterNotice');
+            const noticeText = document.getElementById('activeFilterText');
+
+            if (type !== 'all') {
+                notice.classList.remove('hidden');
+                noticeText.innerText = `當前篩選條件: 包含【${type}兵】隊伍`;
+            } else {
+                notice.classList.add('hidden');
             }
 
-            return textMatch && troopMatch;
-        });
-        
-        displayTeams(filtered);
-    }
-</script>
+            // Highlight pills
+            document.querySelectorAll('.troop-filter-pill').forEach(btn => {
+                if (btn.innerText.includes(type) || (type === 'all' && btn.innerText.includes('全部'))) {
+                    btn.className = "troop-filter-pill px-3 py-1 rounded-lg text-xs font-medium border bg-amber-500/20 text-amber-300 border-amber-500/40 whitespace-nowrap";
+                } else {
+                    btn.className = "troop-filter-pill px-3 py-1 rounded-lg text-xs font-medium border bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600 whitespace-nowrap";
+                }
+            });
 
+            renderTeamList();
+        }
+
+        function quickFilterTeam(teamKeyword) {
+            switchTab('list');
+            const searchInput = document.getElementById('globalSearchInput');
+            searchInput.value = teamKeyword;
+            renderTeamList();
+            showToast(`已套用關鍵字過濾: ${teamKeyword}`);
+        }
+
+        function clearSearch() {
+            document.getElementById('globalSearchInput').value = '';
+            renderTeamList();
+        }
+
+        function resetAllFilters() {
+            document.getElementById('globalSearchInput').value = '';
+            activeTroopFilter = 'all';
+            document.getElementById('activeFilterNotice').classList.add('hidden');
+            renderTeamList();
+            showToast('已重置所有過濾條件');
+        }
+
+        function copyCurrentModalInfo() {
+            if (!currentModalTeam) return;
+            const text = `【三謀 S6 - ${currentModalTeam.name}】\n武將: ${currentModalTeam.hero1}(${currentModalTeam.type1}) / ${currentModalTeam.hero2}(${currentModalTeam.type2}) / ${currentModalTeam.hero3}(${currentModalTeam.type3})\n戰法1: ${currentModalTeam.skill1}\n戰法2: ${currentModalTeam.skill2}\n戰法3: ${currentModalTeam.skill3}\n克制: ${currentModalTeam.advantage}\n被克: ${currentModalTeam.disadvantage}`;
+            
+            copyToClipboard(text);
+            showToast('已複製隊伍配置文字至剪貼簿！');
+        }
+
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+
+        function showToast(msg, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.innerText = msg;
+            if (type === 'success') {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400 text-lg";
+            } else if (type === 'error') {
+                toastIcon.className = "fa-solid fa-circle-xmark text-rose-400 text-lg";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-info text-amber-400 text-lg";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+
+        function escapeJS(str) {
+            if (!str) return '';
+            return str.replace(/'/g, "\\'");
+        }
+    </script>
 </body>
 </html>
