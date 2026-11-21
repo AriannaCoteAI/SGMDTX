@@ -1,0 +1,20 @@
+{
+  "platform": "三謀 AI 小工具管理平台",
+  "alliance": "流星街專用",
+  "author": "飛羽舞霜",
+  "updatedAt": "2026-11-22 00:19",
+  "tools": [
+    {
+      "id": "gh-ironcal.html",
+      "name": "同盟精鐵與攻城排程計算機",
+      "filename": "ironcal.html",
+      "category": "同盟管理",
+      "version": "v1.0",
+      "icon": "⚔️",
+      "description": "",
+      "author": "飛羽舞霜",
+      "alliance": "流星街專用",
+      "updatedAt": "2026-11-22 00:19"
+    }
+  ]
+}
