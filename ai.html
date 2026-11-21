@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>三謀 AI 小工具管理平台｜流星街專用</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans TC"', 'Inter', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+          },
+          colors: {
+            obsidian: '#0b0f17',
+            cardbg: '#131a26',
+            gold: {
+              400: '#f59e0b',
+              500: '#d4af37',
+              600: '#b48a1e',
+            },
+            crimson: {
+              500: '#dc2626',
+              600: '#991b1b',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* 三國戰術地圖格線背景與光暈 */
+    body {
+      background-color: #0b0f17;
+      background-image:
+        radial-gradient(circle at 15% 0%, rgba(212, 175, 55, 0.12), transparent 40%),
+        radial-gradient(circle at 85% 10%, rgba(185, 28, 28, 0.10), transparent 38%),
+        linear-gradient(rgba(212, 175, 55, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212, 175, 55, 0.04) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    /* 玻璃擬態戰術卡片 */
+    .tactical-card {
+      background: linear-gradient(145deg, rgba(19, 26, 38, 0.92), rgba(13, 18, 28, 0.96));
+      border: 1px solid rgba(212, 175, 55, 0.18);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .tactical-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(245, 158, 11, 0.5);
+      box-shadow: 0 12px 35px rgba(212, 175, 55, 0.12);
+    }
+
+    /* 流星街專用徽章流光 */
+    .exclusive-badge {
+      background: linear-gradient(135deg, #991b1b 0%, #b45309 50%, #d4af37 100%);
+      box-shadow: 0 0 14px rgba(212, 175, 55, 0.35);
+    }
+
+    /* 自訂捲軸 */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b0f17;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #273247;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #d4af37;
+    }
+
+    /* 拖曳上傳區動畫 */
+    .dropzone-active {
+      border-color: #f59e0b !important;
+      background-color: rgba(245, 158, 11, 0.1) !important;
+    }
+
+    /* 全螢幕沙盒模式 */
+    .runner-fullscreen {
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
+    }
+  </style>
+</head>
+<body class="font-sans antialiased selection:bg-amber-500/30 selection:text-amber-200 flex flex-col min-h-screen">
+
+  <!-- ==================== 頂部導覽列 ==================== -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-[#0b0f17]/85 border-b border-amber-500/20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3.5">
+        <!-- 品牌與流星街專用識別 -->
+        <div class="flex items-center gap-3.5">
+          <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500/20 to-red-900/40 border border-amber-400/40 flex items-center justify-center shadow-lg shadow-amber-900/20 shrink-0">
+            <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v8m-4-4h8"/>
+            </svg>
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h1 class="text-lg sm:text-xl font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-200">
+                三謀 AI 小工具管理平台
+              </h1>
+              <span class="exclusive-badge inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold text-white tracking-wider border border-amber-300/50">
+                <svg class="w-3 h-3 text-amber-200" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                </svg>
+                流星街專用
+              </span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5 mt-0.5 text-xs text-slate-400">
+              <span class="text-amber-300/90 font-medium">作者：飛羽舞霜</span>
+              <span class="text-slate-600">•</span>
+              <span id="githubStatusPill" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-800/90 border border-slate-700 text-slate-300">
+                <span id="githubStatusDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+                <span id="githubStatusText">未連接 GitHub</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作按鈕群 -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="btnSyncGithub" onclick="syncFromGitHub(true)" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 border border-slate-700 hover:border-amber-500/40 transition active:scale-95">
+            <svg id="syncIcon" class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            <span>同步 GitHub</span>
+          </button>
+
+          <button onclick="openEditorModal()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 shadow-lg shadow-amber-500/20 transition active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            <span>上傳 / 新增工具</span>
+          </button>
+
+          <button onclick="openSettingsModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium bg-slate-800/90 hover:bg-slate-700/90 text-amber-200 border border-amber-500/30 hover:border-amber-400/60 transition active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <span>GitHub 設定</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== 主內容區 ==================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+    <!-- 戰術數據總覽列 -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+      <div class="rounded-2xl bg-[#131a26]/85 border border-slate-800 p-4 flex items-center justify-between">
+        <div>
+          <p class="text-xs text-slate-400">平台工具總數</p>
+          <p id="statTotal" class="text-2xl font-black text-amber-300 mt-1">0</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-lg">⚔️</div>
+      </div>
+      <div class="rounded-2xl bg-[#131a26]/85 border border-slate-800 p-4 flex items-center justify-between">
+        <div>
+          <p class="text-xs text-slate-400">GitHub 雲端工具</p>
+          <p id="statGithub" class="text-2xl font-black text-emerald-400 mt-1">0</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-lg">☁️</div>
+      </div>
+      <div class="rounded-2xl bg-[#131a26]/85 border border-slate-800 p-4 flex items-center justify-between">
+        <div>
+          <p class="text-xs text-slate-400">本地暫存 / 內建</p>
+          <p id="statLocal" class="text-2xl font-black text-sky-400 mt-1">0</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-lg">📜</div>
+      </div>
+      <div class="rounded-2xl bg-[#131a26]/85 border border-slate-800 p-4 flex items-center justify-between">
+        <div class="min-w-0">
+          <p class="text-xs text-slate-400">最近同步狀態</p>
+          <p id="statSyncTime" class="text-sm font-bold text-slate-200 mt-1.5 truncate">尚未同步</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-lg shrink-0">🏯</div>
+      </div>
+    </section>
+
+    <!-- 搜尋與分類篩選列 -->
+    <section class="rounded-2xl bg-[#131a26]/80 border border-amber-500/15 p-4 mb-6 backdrop-blur-md">
+      <div class="flex flex-col md:flex-row gap-3.5 md:items-center md:justify-between">
+        <!-- 分類頁籤 -->
+        <div id="categoryTabs" class="flex flex-wrap items-center gap-2">
+          <!-- 由 JS 動態渲染 -->
+        </div>
+
+        <!-- 搜尋框 -->
+        <div class="relative w-full md:w-72">
+          <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z"/>
+          </svg>
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="搜尋工具名稱、簡介、檔名..."
+            oninput="renderTools()"
+            class="w-full pl-10 pr-4 py-2 rounded-xl bg-[#0b0f17] border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50 text-sm text-slate-100 placeholder-slate-500 outline-none transition"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- 小工具卡片網格 -->
+    <section id="toolsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+      <!-- 由 JS 動態渲染 -->
+    </section>
+
+    <!-- 空狀態提示 -->
+    <div id="emptyState" class="hidden text-center py-16 px-4 rounded-2xl border border-dashed border-slate-700/80 bg-[#131a26]/40">
+      <div class="text-4xl mb-3">🧭</div>
+      <h3 class="text-lg font-bold text-slate-200">找不到符合條件的小工具</h3>
+      <p class="text-sm text-slate-400 mt-1">請嘗試切換分類、清除搜尋關鍵字，或點擊右上角「上傳 / 新增工具」。</p>
+    </div>
+  </main>
+
+  <!-- ==================== 頁尾 ==================== -->
+  <footer class="border-t border-slate-800/80 bg-[#0b0f17]/90 py-5 mt-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-0.5 rounded bg-red-900/50 border border-red-500/30 text-amber-200 font-bold">流星街專用</span>
+        <span>三國謀定天下 × AI 戰術指揮工具集</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span>作者：<strong class="text-amber-300">飛羽舞霜</strong></span>
+        <span class="text-slate-600">|</span>
+        <span>支援 GitHub Contents API 即時雲端部署</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== Modal 1: 小工具沙盒執行視窗 ==================== -->
+  <div id="runnerModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4">
+    <div id="runnerDialog" class="w-full max-w-5xl h-[88vh] bg-[#0f1520] border border-amber-500/35 rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-200">
+      <!-- 執行視窗標題列 -->
+      <div class="px-4 py-3 bg-[#131a26] border-b border-amber-500/20 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span id="runnerIcon" class="text-xl">🛠️</span>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <h2 id="runnerTitle" class="text-base font-bold text-amber-200 truncate">工具名稱</h2>
+              <span id="runnerVersion" class="px-2 py-0.5 text-[11px] font-mono rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30">v1.0</span>
+            </div>
+            <p class="text-[11px] text-slate-400 flex items-center gap-1.5">
+              <span class="text-red-400 font-bold">流星街專用</span>
+              <span>·</span>
+              <span>作者：飛羽舞霜</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <button onclick="reloadRunner()" title="重新載入" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition">
+            🔄 重載
+          </button>
+          <button onclick="toggleRunnerFullscreen()" id="btnFullscreen" title="切換全螢幕" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition">
+            ⛶ 全螢幕
+          </button>
+          <button onclick="downloadCurrentTool()" title="下載 HTML 檔案" class="px-2.5 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-medium border border-amber-500/30 transition">
+            ⬇️ 下載 HTML
+          </button>
+          <button onclick="closeRunnerModal()" class="p-1.5 rounded-lg bg-red-950/60 hover:bg-red-900/80 text-red-200 border border-red-500/30 transition" aria-label="關閉">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 沙盒 iframe 區域 -->
+      <div class="flex-1 bg-[#0b0f17] relative">
+        <div id="runnerLoading" class="hidden absolute inset-0 flex items-center justify-center bg-[#0b0f17]/90 z-10">
+          <div class="text-center">
+            <div class="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+            <p class="text-xs text-amber-200">正在從 GitHub 載入工具程式碼...</p>
+          </div>
+        </div>
+        <iframe
+          id="runnerIframe"
+          class="w-full h-full border-0 bg-[#0b0f17]"
+          sandbox="allow-scripts allow-forms allow-modals allow-same-origin"
+        ></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Modal 2: 上傳 / 編輯工具視窗 ==================== -->
+  <div id="editorModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto">
+    <div class="w-full max-w-4xl bg-[#131a26] border border-amber-500/30 rounded-2xl shadow-2xl overflow-hidden my-auto max-h-[94vh] flex flex-col">
+      <!-- 標題列 -->
+      <div class="px-5 py-4 bg-[#0f1520] border-b border-slate-800 flex items-center justify-between">
+        <div>
+          <h2 id="editorModalTitle" class="text-lg font-bold text-amber-300">上傳 / 新增三謀小工具</h2>
+          <p class="text-xs text-slate-400 mt-0.5">可直接拖曳 .html 檔案或線上編寫程式碼，一鍵推送至 GitHub 倉庫或儲存於本地</p>
+        </div>
+        <button onclick="closeEditorModal()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 表單主體 -->
+      <div class="p-5 overflow-y-auto space-y-4 flex-1">
+        <input type="hidden" id="editToolId" />
+        <input type="hidden" id="editToolSource" />
+
+        <!-- 基本欄位 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-medium text-slate-300 mb-1">工具名稱 *</label>
+            <input id="inputToolName" type="text" placeholder="例如：同盟打城考勤統計器" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm text-white outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">檔案名稱 (.html) *</label>
+            <input id="inputFileName" type="text" placeholder="my-tool.html" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm font-mono text-amber-200 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">分類</label>
+            <select id="inputCategory" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm text-white outline-none">
+              <option value="開荒計算">開荒計算</option>
+              <option value="陣容配將">陣容配將</option>
+              <option value="同盟管理">同盟管理</option>
+              <option value="戰報 AI">戰報 AI</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">版本號</label>
+            <input id="inputVersion" type="text" value="v1.0" placeholder="v1.0" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm font-mono text-white outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">圖示 Emoji</label>
+            <input id="inputIcon" type="text" value="⚔️" placeholder="⚔️" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm text-white outline-none" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-medium text-slate-300 mb-1">Git Commit 備註</label>
+            <input id="inputCommitMsg" type="text" placeholder="feat: 新增/更新三謀小工具" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm text-white outline-none" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">工具簡介</label>
+          <input id="inputDescription" type="text" placeholder="簡短說明這個小工具的功能與使用情境..." class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm text-white outline-none" />
+        </div>
+
+        <!-- 檔案拖曳上傳區 -->
+        <div
+          id="fileDropzone"
+          onclick="document.getElementById('htmlFileInput').click()"
+          class="border-2 border-dashed border-slate-700 hover:border-amber-500/60 rounded-xl p-4 text-center cursor-pointer bg-[#0b0f17]/60 transition"
+        >
+          <input id="htmlFileInput" type="file" accept=".html,.htm" class="hidden" onchange="handleFileSelect(event)" />
+          <p class="text-sm text-slate-300 font-medium">📂 點擊選擇或將本機 <span class="text-amber-300 font-mono">.html</span> 檔案拖曳至此處</p>
+          <p class="text-xs text-slate-500 mt-1">自動帶入檔名與完整程式碼內容，支援 UTF-8 繁體中文</p>
+        </div>
+
+        <!-- 程式碼編輯器 -->
+        <div>
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+            <label class="text-xs font-medium text-slate-300">小工具完整 HTML / CSS / JS 程式碼 *</label>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="loadStarterTemplate()" class="px-2.5 py-1 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                📄 載入空白範本
+              </button>
+              <button type="button" onclick="previewEditorCode()" class="px-2.5 py-1 rounded-lg text-xs bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition">
+                👁️ 即時預覽
+              </button>
+            </div>
+          </div>
+          <textarea
+            id="inputCode"
+            rows="12"
+            spellcheck="false"
+            placeholder="<!DOCTYPE html>..."
+            class="w-full p-3.5 rounded-xl bg-[#090d14] border border-slate-700 focus:border-amber-400 font-mono text-xs leading-relaxed text-emerald-200 outline-none resize-y"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- 底部儲存操作列 -->
+      <div class="px-5 py-3.5 bg-[#0f1520] border-t border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+        <button onclick="closeEditorModal()" class="px-4 py-2 rounded-xl text-sm text-slate-300 hover:bg-slate-800 transition">
+          取消
+        </button>
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          <button onclick="saveToolLocally()" class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30 transition">
+            💾 僅儲存至本地瀏覽器
+          </button>
+          <button id="btnPushGithub" onclick="pushToolToGitHub()" class="inline-flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 shadow-lg shadow-amber-500/20 transition">
+            <span id="pushSpinner" class="hidden w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></span>
+            <span id="pushBtnText">🚀 推送到 GitHub (上傳 / 更新)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Modal 3: GitHub API 設定視窗 ==================== -->
+  <div id="settingsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto">
+    <div class="w-full max-w-2xl bg-[#131a26] border border-amber-500/30 rounded-2xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
+      <div class="px-5 py-4 bg-[#0f1520] border-b border-slate-800 flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-amber-300">GitHub API 雲端倉庫設定</h2>
+          <p class="text-xs text-slate-400 mt-0.5">透過 GitHub REST API 隨時上傳、更新與同步流星街專用小工具</p>
+        </div>
+        <button onclick="closeSettingsModal()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">GitHub Owner (帳號或組織) *</label>
+            <input id="cfgOwner" type="text" placeholder="例如：feiyuwushuang" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm text-white outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Repository Name (倉庫名稱) *</label>
+            <input id="cfgRepo" type="text" placeholder="例如：sanmou-ai-tools" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm text-white outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Branch (分支名稱)</label>
+            <input id="cfgBranch" type="text" value="main" placeholder="main" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm font-mono text-white outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">工具資料夾路徑</label>
+            <input id="cfgPath" type="text" value="tools" placeholder="tools" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm font-mono text-white outline-none" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Personal Access Token (PAT) *</label>
+          <div class="relative">
+            <input id="cfgToken" type="password" placeholder="github_pat_xxxx 或 ghp_xxxx" class="w-full pl-3 pr-20 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm font-mono text-amber-200 outline-none" />
+            <button type="button" onclick="toggleTokenVisibility()" id="btnToggleToken" class="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-slate-800 text-xs text-slate-300 hover:text-white">
+              顯示
+            </button>
+          </div>
+          <p class="text-[11px] text-emerald-400/90 mt-1.5 flex items-center gap-1">
+            <span>🔒</span>
+            <span>安全提示：您的 Token 僅加密儲存在本機瀏覽器的 localStorage 中，不會傳送至任何第三方伺服器。</span>
+          </p>
+        </div>
+
+        <!-- 可折疊使用說明 -->
+        <details class="rounded-xl bg-[#0b0f17] border border-slate-800 p-3.5 text-xs text-slate-300">
+          <summary class="cursor-pointer font-bold text-amber-300 select-none">📖 使用說明：如何申請 GitHub Fine-grained PAT 與倉庫結構</summary>
+          <div class="mt-3 space-y-2 leading-relaxed text-slate-400">
+            <p><strong class="text-slate-200">1. 建立 GitHub 倉庫：</strong>建立一個新的公開或私有 Repo（例如 <code class="text-amber-300">sanmou-ai-tools</code>），並初始化 <code class="text-amber-300">main</code> 分支。</p>
+            <p><strong class="text-slate-200">2. 申請 Fine-grained Token：</strong>前往 GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token。</p>
+            <p><strong class="text-slate-200">3. 設定權限：</strong>選擇上述倉庫，並在 Repository permissions 中將 <strong class="text-emerald-400">Contents</strong> 設為 <strong class="text-emerald-400">Read and write</strong>，複製產生的 Token 貼上即可。</p>
+            <p><strong class="text-slate-200">4. 自動管理的檔案結構：</strong>每次上傳或更新工具時，平台會自動寫入 <code class="text-amber-300">tools/您的檔名.html</code> 並自動維護 <code class="text-amber-300">tools/manifest.json</code> 清單，無需手動建立！</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="px-5 py-3.5 bg-[#0f1520] border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+        <button onclick="clearGitHubSettings()" class="px-3.5 py-2 rounded-xl text-xs font-medium text-red-400 hover:bg-red-950/50 border border-red-500/20 transition">
+          清除設定
+        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="saveGitHubSettings(false)" class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 transition">
+            僅儲存設定
+          </button>
+          <button id="btnTestSync" onclick="saveGitHubSettings(true)" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 transition">
+            <span>🔗 測試連線並同步</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Modal 4: 刪除確認視窗 ==================== -->
+  <div id="deleteModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="w-full max-w-md bg-[#131a26] border border-red-500/40 rounded-2xl shadow-2xl p-5">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-xl">⚠️</div>
+        <div>
+          <h3 class="text-base font-bold text-white">確認刪除小工具？</h3>
+          <p id="deleteTargetName" class="text-xs text-amber-300 font-medium mt-0.5"></p>
+        </div>
+      </div>
+      <p id="deleteDesc" class="text-sm text-slate-300 leading-relaxed mb-5"></p>
+      <div class="flex items-center justify-end gap-2">
+        <button onclick="closeDeleteModal()" class="px-4 py-2 rounded-xl text-sm text-slate-300 bg-slate-800 hover:bg-slate-700 transition">
+          取消
+        </button>
+        <button id="btnConfirmDelete" onclick="executeDeleteTool()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-red-600 hover:bg-red-500 text-white transition">
+          <span id="deleteSpinner" class="hidden w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+          <span>確認刪除</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Toast 通知容器 ==================== -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-[60] flex flex-col gap-2.5 max-w-sm w-[calc(100vw-2.5rem)] pointer-events-none"></div>
+
+  <!-- ==================== 核心應用程式邏輯 ==================== -->
+  <script>
+    // =========================================================================
+    // 1. 內建 4 款三謀實戰範例小工具 (完整自包含 HTML，開箱即用)
+    // =========================================================================
+
+    const DEMO_TOOLS = [
+      {
+        id: 'demo-stamina-calc',
+        name: '開荒體力與時間計算器',
+        filename: 'stamina-calculator.html',
+        category: '開荒計算',
+        version: 'v1.2',
+        icon: '⚡',
+        description: '精準計算武將體力自然回滿時間、目標體力達成時刻，以及當前可執行的開荒打地次數。',
+        source: 'builtin',
+        updatedAt: '2026-11-20 20:00',
+        html: `<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"><\/script>
+<style>body{background:#0b0f17;color:#e2e8f0;font-family:"Noto Sans TC",sans-serif;}</style>
+</head>
+<body class="p-4 sm:p-6">
+  <div class="max-w-xl mx-auto bg-[#131a26] border border-amber-500/30 rounded-2xl p-5 shadow-xl">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-lg font-bold text-amber-300">⚡ 開荒體力與時間計算器</h1>
+      <span class="text-xs px-2 py-0.5 rounded bg-red-900/60 text-amber-200 border border-amber-500/30">流星街專用</span>
+    </div>
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">目前體力</label>
+        <input id="cur" type="number" value="45" min="0" max="300" oninput="calc()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-amber-200 font-bold outline-none focus:border-amber-400">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">目標 / 上限體力</label>
+        <input id="max" type="number" value="120" min="1" max="300" oninput="calc()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-white font-bold outline-none focus:border-amber-400">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">每恢復 1 點體力 (分鐘)</label>
+        <input id="rate" type="number" value="3" min="1" max="30" oninput="calc()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-white outline-none focus:border-amber-400">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">單次打地消耗體力</label>
+        <input id="cost" type="number" value="20" min="1" max="60" oninput="calc()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-white outline-none focus:border-amber-400">
+      </div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+      <div class="p-3.5 rounded-xl bg-[#0b0f17] border border-slate-800 text-center">
+        <div class="text-xs text-slate-400">目前可打地次數</div>
+        <div id="nowRuns" class="text-2xl font-black text-emerald-400 mt-1">2 次</div>
+      </div>
+      <div class="p-3.5 rounded-xl bg-[#0b0f17] border border-slate-800 text-center">
+        <div class="text-xs text-slate-400">回滿所需時間</div>
+        <div id="waitTime" class="text-xl font-black text-amber-300 mt-1">3小時 45分</div>
+      </div>
+      <div class="p-3.5 rounded-xl bg-[#0b0f17] border border-slate-800 text-center">
+        <div class="text-xs text-slate-400">預計達成時間</div>
+        <div id="finishAt" class="text-lg font-black text-sky-300 mt-1">--:--</div>
+      </div>
+    </div>
+    <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-200 leading-relaxed" id="tipBox">
+      計算結果將即時顯示於此。
+    </div>
+  </div>
+  <script>
+    function calc(){
+      const cur = Math.max(0, Number(document.getElementById('cur').value)||0);
+      const max = Math.max(1, Number(document.getElementById('max').value)||120);
+      const rate = Math.max(1, Number(document.getElementById('rate').value)||3);
+      const cost = Math.max(1, Number(document.getElementById('cost').value)||20);
+      const nowRuns = Math.floor(cur / cost);
+      const maxRuns = Math.floor(max / cost);
+      const diff = Math.max(0, max - cur);
+      const mins = diff * rate;
+      const hrs = Math.floor(mins / 60);
+      const remMins = mins % 60;
+      const targetDate = new Date(Date.now() + mins * 60000);
+      const hh = String(targetDate.getHours()).padStart(2,'0');
+      const mm = String(targetDate.getMinutes()).padStart(2,'0');
+      const nextNeed = Math.max(0, ((nowRuns + 1) * cost) - cur);
+      const nextMins = nextNeed * rate;
+      document.getElementById('nowRuns').textContent = nowRuns + ' 次';
+      document.getElementById('waitTime').textContent = diff === 0 ? '已達標' : (hrs > 0 ? hrs + '小時 ' : '') + remMins + '分';
+      document.getElementById('finishAt').textContent = diff === 0 ? '現在' : hh + ':' + mm;
+      document.getElementById('tipBox').innerHTML =
+        '📌 距離「下一次出征（共 ' + (nowRuns+1) + ' 次）」還差 <b>' + nextNeed + '</b> 點體力，約需等待 <b>' + nextMins + ' 分鐘</b>。<br>' +
+        '📌 體力達到 ' + max + ' 時，最多可連續打地 <b>' + maxRuns + ' 次</b>（剩餘 ' + (max % cost) + ' 體力）。';
+    }
+    calc();
+  <\/script>
+</body>
+</html>`
+      },
+      {
+        id: 'demo-troop-counter',
+        name: '兵種克制與陣容速查表',
+        filename: 'troop-counter-sheet.html',
+        category: '陣容配將',
+        version: 'v1.1',
+        icon: '🛡️',
+        description: '互動式盾、槍、弓、騎兵種克制查詢，內建個人主力配將筆記本（自動本地存檔）。',
+        source: 'builtin',
+        updatedAt: '2026-11-20 20:15',
+        html: `<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"><\/script>
+<style>body{background:#0b0f17;color:#e2e8f0;font-family:"Noto Sans TC",sans-serif;}</style>
+</head>
+<body class="p-4 sm:p-6">
+  <div class="max-w-2xl mx-auto space-y-4">
+    <div class="bg-[#131a26] border border-amber-500/30 rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h1 class="text-lg font-bold text-amber-300">🛡️ 兵種克制互動速查</h1>
+        <span class="text-xs text-slate-400">點擊敵方兵種查看最佳應對</span>
+      </div>
+      <div class="grid grid-cols-4 gap-2.5 mb-4">
+        <button onclick="selectTroop('盾兵')" id="btn-盾兵" class="troop-btn py-3 rounded-xl bg-[#0b0f17] border border-slate-700 hover:border-amber-400 font-bold text-sm transition">🛡️ 盾兵</button>
+        <button onclick="selectTroop('弓兵')" id="btn-弓兵" class="troop-btn py-3 rounded-xl bg-[#0b0f17] border border-slate-700 hover:border-amber-400 font-bold text-sm transition">🏹 弓兵</button>
+        <button onclick="selectTroop('槍兵')" id="btn-槍兵" class="troop-btn py-3 rounded-xl bg-[#0b0f17] border border-slate-700 hover:border-amber-400 font-bold text-sm transition">🔱 槍兵</button>
+        <button onclick="selectTroop('騎兵')" id="btn-騎兵" class="troop-btn py-3 rounded-xl bg-[#0b0f17] border border-slate-700 hover:border-amber-400 font-bold text-sm transition">🐎 騎兵</button>
+      </div>
+      <div id="resultBox" class="p-4 rounded-xl bg-[#0b0f17] border border-slate-800 space-y-2 text-sm"></div>
+      <div class="mt-3 text-xs text-slate-400 text-center">
+        克制循環：<span class="text-amber-300 font-bold">盾兵 ➔ 弓兵 ➔ 槍兵 ➔ 騎兵 ➔ 盾兵</span>
+      </div>
+    </div>
+
+    <div class="bg-[#131a26] border border-slate-800 rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-sm font-bold text-amber-200">📝 我的主力配將速記（自動儲存）</h2>
+        <span id="saveHint" class="text-xs text-emerald-400 opacity-0 transition">已自動儲存</span>
+      </div>
+      <textarea id="notes" rows="5" oninput="saveNotes()" placeholder="記錄你的主力陣容、戰法搭配、加點與紅度..." class="w-full p-3 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm text-slate-200 outline-none"></textarea>
+    </div>
+  </div>
+  <script>
+    const DATA = {
+      '盾兵': { strong: '弓兵', weak: '騎兵', tip: '敵方為盾兵時，建議派出【騎兵】隊伍強攻破防；避免使用【弓兵】硬撞前排。' },
+      '弓兵': { strong: '槍兵', weak: '盾兵', tip: '敵方為弓兵時，建議派出【盾兵】高減傷隊伍反打；避免使用【槍兵】遭遠程壓制。' },
+      '槍兵': { strong: '騎兵', weak: '弓兵', tip: '敵方為槍兵時，建議派出【弓兵】高爆發輸出；避免使用【騎兵】正面衝鋒。' },
+      '騎兵': { strong: '盾兵', weak: '槍兵', tip: '敵方為騎兵時，建議派出【槍兵】迎擊克制；避免使用【盾兵】被機動突擊。' }
+    };
+    function selectTroop(t){
+      document.querySelectorAll('.troop-btn').forEach(b => b.className = 'troop-btn py-3 rounded-xl bg-[#0b0f17] border border-slate-700 hover:border-amber-400 font-bold text-sm transition text-slate-200');
+      document.getElementById('btn-'+t).className = 'troop-btn py-3 rounded-xl bg-amber-500/20 border border-amber-400 font-bold text-sm transition text-amber-200';
+      const d = DATA[t];
+      document.getElementById('resultBox').innerHTML =
+        '<div class="flex flex-wrap gap-3">' +
+          '<span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold">✅ 建議派出：' + d.weak + '（克制敵方）</span>' +
+          '<span class="px-2.5 py-1 rounded-lg bg-red-500/15 border border-red-500/30 text-red-300 font-bold">❌ 切忌派出：' + d.strong + '（被敵方克制）</span>' +
+        '</div>' +
+        '<p class="text-slate-300 pt-1">' + d.tip + '</p>';
+    }
+    const notesEl = document.getElementById('notes');
+    notesEl.value = localStorage.getItem('sanmou_troop_notes') || '一隊：【桃園盾】劉備 + 張飛 + 關羽\\n二隊：【大都督弓】周瑜 + 陸遜 + 呂蒙';
+    function saveNotes(){
+      localStorage.setItem('sanmou_troop_notes', notesEl.value);
+      const h = document.getElementById('saveHint');
+      h.style.opacity = '1';
+      setTimeout(()=> h.style.opacity = '0', 1200);
+    }
+    selectTroop('盾兵');
+  <\/script>
+</body>
+</html>`
+      },
+      {
+        id: 'demo-siege-rally',
+        name: '流星街攻城集結生成器',
+        filename: 'meteor-siege-rally.html',
+        category: '同盟管理',
+        version: 'v1.3',
+        icon: '🚩',
+        description: '快速產生格式整齊的同盟攻城、鋪路、集結發車公告，一鍵複製貼上至微信/QQ/Discord 群組。',
+        source: 'builtin',
+        updatedAt: '2026-11-21 14:30',
+        html: `<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"><\/script>
+<style>body{background:#0b0f17;color:#e2e8f0;font-family:"Noto Sans TC",sans-serif;}</style>
+</head>
+<body class="p-4 sm:p-6">
+  <div class="max-w-2xl mx-auto bg-[#131a26] border border-amber-500/30 rounded-2xl p-5 shadow-xl space-y-4">
+    <div class="flex items-center justify-between">
+      <h1 class="text-lg font-bold text-amber-300">🚩 流星街攻城集結公告生成器</h1>
+      <span class="text-xs px-2 py-0.5 rounded bg-red-900/60 text-amber-200 border border-amber-500/30">同盟指揮專用</span>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">目標城池 / 關口</label>
+        <input id="city" type="text" value="六級城・洛陽外城" oninput="gen()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-sm text-white outline-none focus:border-amber-400">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">集結座標</label>
+        <input id="coord" type="text" value="(520, 888) 攻城大營" oninput="gen()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-sm text-amber-200 outline-none focus:border-amber-400">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">發車時間</label>
+        <input id="time" type="text" value="今晚 21:00 準時發車" oninput="gen()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-sm text-white outline-none focus:border-amber-400">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">總指揮官</label>
+        <input id="cmd" type="text" value="飛羽舞霜" oninput="gen()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-sm text-white outline-none focus:border-amber-400">
+      </div>
+    </div>
+    <div>
+      <label class="text-xs text-slate-400 block mb-1">戰術要求 / 備註</label>
+      <input id="note" type="text" value="主力先清守軍，拆遷隊統一聽倒數 3 秒觸城，嚴禁搶跑！" oninput="gen()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-sm text-white outline-none focus:border-amber-400">
+    </div>
+    <div>
+      <div class="flex items-center justify-between mb-1.5">
+        <span class="text-xs text-slate-400">預覽公告文案</span>
+        <button onclick="copyText()" id="copyBtn" class="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition">📋 一鍵複製公告</button>
+      </div>
+      <textarea id="output" rows="9" readonly class="w-full p-3.5 rounded-xl bg-[#090d14] border border-slate-700 text-sm text-amber-100 leading-relaxed outline-none"></textarea>
+    </div>
+  </div>
+  <script>
+    function gen(){
+      const city = document.getElementById('city').value.trim();
+      const coord = document.getElementById('coord').value.trim();
+      const time = document.getElementById('time').value.trim();
+      const cmd = document.getElementById('cmd').value.trim();
+      const note = document.getElementById('note').value.trim();
+      const txt =
+        '【⚔️ 流星街・全盟攻城集結令 ⚔️】\\n' +
+        '━━━━━━━━━━━━━━━━━━\\n' +
+        '🏯 攻城目標：' + city + '\\n' +
+        '📍 集結座標：' + coord + '\\n' +
+        '⏰ 發車時間：' + time + '\\n' +
+        '🎖️ 現場指揮：' + cmd + '\\n' +
+        '━━━━━━━━━━━━━━━━━━\\n' +
+        '📌 戰術紀律：' + note + '\\n' +
+        '🔥 請各位兄弟提前 10 分鐘進攻城大營，不見不散！';
+      document.getElementById('output').value = txt;
+    }
+    function copyText(){
+      const el = document.getElementById('output');
+      el.select();
+      document.execCommand('copy');
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✅ 已複製到剪貼簿！';
+      setTimeout(()=> btn.textContent = '📋 一鍵複製公告', 1800);
+    }
+    gen();
+  <\/script>
+</body>
+</html>`
+      },
+      {
+        id: 'demo-ai-battle-prompt',
+        name: '三謀 AI 戰報分析提示詞生成器',
+        filename: 'ai-battle-prompt.html',
+        category: '戰報 AI',
+        version: 'v1.0',
+        icon: '🤖',
+        description: '輸入雙方陣容、戰法與戰損數據，自動組裝專業結構化 Prompt，貼給 Gemini / ChatGPT 深度復盤戰報。',
+        source: 'builtin',
+        updatedAt: '2026-11-21 22:10',
+        html: `<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"><\/script>
+<style>body{background:#0b0f17;color:#e2e8f0;font-family:"Noto Sans TC",sans-serif;}</style>
+</head>
+<body class="p-4 sm:p-6">
+  <div class="max-w-2xl mx-auto bg-[#131a26] border border-amber-500/30 rounded-2xl p-5 shadow-xl space-y-4">
+    <div class="flex items-center justify-between">
+      <h1 class="text-lg font-bold text-amber-300">🤖 三謀 AI 戰報分析 Prompt 生成器</h1>
+      <span class="text-xs text-slate-400">深度復盤用</span>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">我方陣容與核心戰法</label>
+        <textarea id="myTeam" rows="2" oninput="gen()" class="w-full p-2.5 rounded-xl bg-[#0b0f17] border border-slate-700 text-xs text-white outline-none focus:border-amber-400">諸葛亮(草船+決水) + 黃月英 + 馬超(橫掃千軍)</textarea>
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">敵方陣容與核心戰法</label>
+        <textarea id="enemyTeam" rows="2" oninput="gen()" class="w-full p-2.5 rounded-xl bg-[#0b0f17] border border-slate-700 text-xs text-white outline-none focus:border-amber-400">曹操(蓄勢待發) + 司馬懿 + 鄧艾</textarea>
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">戰鬥結果</label>
+        <select id="result" onchange="gen()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-sm text-white outline-none">
+          <option value="小敗（戰損較高）">小敗（戰損較高）</option>
+          <option value="慘敗（被低損穿隊）">慘敗（被低損穿隊）</option>
+          <option value="險勝（傷敵一千自損八百）">險勝（傷敵一千自損八百）</option>
+          <option value="大勝（低損吃掉對方）">大勝（低損吃掉對方）</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">雙方戰損概況</label>
+        <input id="loss" type="text" value="我方損兵 14,500，敵方損兵 8,200，第4回合被控場" oninput="gen()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-xs text-white outline-none focus:border-amber-400">
+      </div>
+    </div>
+    <div>
+      <div class="flex items-center justify-between mb-1.5">
+        <span class="text-xs text-slate-400">產生的 AI 分析提示詞</span>
+        <button onclick="copyPrompt()" id="copyBtn" class="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition">📋 複製給 AI 分析</button>
+      </div>
+      <textarea id="promptOut" rows="9" readonly class="w-full p-3.5 rounded-xl bg-[#090d14] border border-slate-700 text-xs font-mono text-emerald-200 leading-relaxed outline-none"></textarea>
+    </div>
+  </div>
+  <script>
+    function gen(){
+      const my = document.getElementById('myTeam').value.trim();
+      const en = document.getElementById('enemyTeam').value.trim();
+      const res = document.getElementById('result').value;
+      const loss = document.getElementById('loss').value.trim();
+      const text =
+        '你是一位《三國：謀定天下》頂尖配將師與戰術分析師，請幫我深度復盤以下戰報：\\n\\n' +
+        '【我方陣容】' + my + '\\n' +
+        '【敵方陣容】' + en + '\\n' +
+        '【戰鬥結果】' + res + '\\n' +
+        '【戰損與關鍵回合】' + loss + '\\n\\n' +
+        '請依序提供以下分析：\\n' +
+        '1. 核心勝負關鍵點（速度線、控場鏈、兵種與陣型站位）\\n' +
+        '2. 我方戰法或韜略可替換的優化方案（給出高配與平民替代方案）\\n' +
+        '3. 未來在戰場遇到同類型敵隊時的避戰或克制策略。';
+      document.getElementById('promptOut').value = text;
+    }
+    function copyPrompt(){
+      const el = document.getElementById('promptOut');
+      el.select();
+      document.execCommand('copy');
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✅ 已複製提示詞！';
+      setTimeout(()=> btn.textContent = '📋 複製給 AI 分析', 1800);
+    }
+    gen();
+  <\/script>
+</body>
+</html>`
+      }
+    ];
+
+    // =========================================================================
+    // 2. 全域狀態管理與常數
+    // =========================================================================
+    const STORAGE_KEYS = {
+      GH_CONFIG: 'sanmou_gh_config_v1',
+      LOCAL_TOOLS: 'sanmou_local_tools_v1',
+      HIDDEN_DEMOS: 'sanmou_hidden_demos_v1',
+      LAST_SYNC: 'sanmou_last_sync_v1'
+    };
+
+    const CATEGORIES = ['全部', '開荒計算', '陣容配將', '同盟管理', '戰報 AI', '其他'];
+
+    let state = {
+      activeCategory: '全部',
+      ghConfig: null,          // { owner, repo, branch, path, token }
+      githubTools: [],         // 來自 GitHub 的工具清單
+      localTools: [],          // 儲存於 localStorage 的本地工具
+      hiddenDemoIds: [],       // 使用者刪除的內建範例 ID
+      currentRunnerTool: null, // 當前在沙盒開啟的工具
+      pendingDeleteTool: null  // 等待確認刪除的工具
+    };
+
+    // =========================================================================
+    // 3. UTF-8 安全 Base64 編解碼（完美支援繁體中文與 Emoji）
+    // =========================================================================
+    function utf8ToBase64(str) {
+      const bytes = new TextEncoder().encode(str);
+      let binary = '';
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+      return btoa(binary);
+    }
+
+    function base64ToUtf8(base64) {
+      const clean = base64.replace(/\s/g, '');
+      const binary = atob(clean);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return new TextDecoder('utf-8').decode(bytes);
+    }
+
+    // 格式化時間戳
+    function formatNow() {
+      const d = new Date();
+      const p = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+
+    // HTML 轉義，避免卡片標題 XSS
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // =========================================================================
+    // 4. Toast 通知系統
+    // =========================================================================
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const colors = {
+        success: 'bg-emerald-950/95 border-emerald-500/50 text-emerald-100',
+        error: 'bg-red-950/95 border-red-500/50 text-red-100',
+        warning: 'bg-amber-950/95 border-amber-500/50 text-amber-100',
+        info: 'bg-slate-900/95 border-amber-500/40 text-slate-100'
+      };
+      const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+
+      const toast = document.createElement('div');
+      toast.className = `pointer-events-auto flex items-start gap-2.5 px-4 py-3 rounded-xl border shadow-2xl text-sm backdrop-blur-md transition-all duration-300 translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+      toast.innerHTML = `<span class="shrink-0 mt-0.5">${icons[type] || icons.info}</span><span class="leading-snug">${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 3600);
+    }
+
+    // =========================================================================
+    // 5. GitHub REST API 封裝層
+    // =========================================================================
+    function isGitHubConfigured() {
+      const c = state.ghConfig;
+      return !!(c && c.owner && c.repo && c.token);
+    }
+
+    function getCleanPath(path) {
+      return (path || 'tools').replace(/^\/+|\/+$/g, '');
+    }
+
+    function getGitHubHeaders() {
+      return {
+        'Authorization': `Bearer ${state.ghConfig.token}`,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json'
+      };
+    }
+
+    // 取得單一檔案資訊與內容（不存在時回傳 null）
+    async function ghGetFile(filePath) {
+      const { owner, repo, branch } = state.ghConfig;
+      const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${filePath}?ref=${encodeURIComponent(branch || 'main')}&t=${Date.now()}`;
+      const res = await fetch(url, { headers: getGitHubHeaders() });
+      if (res.status === 404) return null;
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `GitHub API 錯誤 (${res.status})`);
+      }
+      const data = await res.json();
+      const content = data.content ? base64ToUtf8(data.content) : '';
+      return { sha: data.sha, content, raw: data };
+    }
+
+    // 上傳或更新檔案（自動先檢查 SHA 避免 409/422 衝突）
+    async function ghPutFile(filePath, contentString, commitMessage) {
+      const { owner, repo, branch } = state.ghConfig;
+      const existing = await ghGetFile(filePath);
+      const body = {
+        message: commitMessage,
+        content: utf8ToBase64(contentString),
+        branch: branch || 'main'
+      };
+      if (existing && existing.sha) {
+        body.sha = existing.sha;
+      }
+
+      const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${filePath}`;
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: getGitHubHeaders(),
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `推送失敗 (${res.status})`);
+      }
+      return await res.json();
+    }
+
+    // 刪除 GitHub 檔案
+    async function ghDeleteFile(filePath, commitMessage) {
+      const { owner, repo, branch } = state.ghConfig;
+      const existing = await ghGetFile(filePath);
+      if (!existing || !existing.sha) return;
+
+      const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${filePath}`;
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: getGitHubHeaders(),
+        body: JSON.stringify({
+          message: commitMessage,
+          sha: existing.sha,
+          branch: branch || 'main'
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `刪除失敗 (${res.status})`);
+      }
+    }
+
+    // 同步 GitHub 倉庫中的工具清單
+    async function syncFromGitHub(showFeedback = false) {
+      if (!isGitHubConfigured()) {
+        if (showFeedback) {
+          showToast('尚未設定 GitHub API，請先填寫倉庫與 Token', 'warning');
+          openSettingsModal();
+        }
+        return false;
+      }
+
+      const syncIcon = document.getElementById('syncIcon');
+      syncIcon.classList.add('animate-spin');
+
+      try {
+        const folder = getCleanPath(state.ghConfig.path);
+        const manifestPath = `${folder}/manifest.json`;
+        const manifestFile = await ghGetFile(manifestPath);
+
+        let loadedTools = [];
+
+        if (manifestFile && manifestFile.content) {
+          const parsed = JSON.parse(manifestFile.content);
+          const list = Array.isArray(parsed) ? parsed : (parsed.tools || []);
+          loadedTools = list.map(item => ({
+            id: item.id || `gh-${item.filename}`,
+            name: item.name || item.filename,
+            filename: item.filename,
+            category: CATEGORIES.includes(item.category) ? item.category : '其他',
+            version: item.version || 'v1.0',
+            icon: item.icon || '🛠️',
+            description: item.description || '從 GitHub 雲端同步的三謀小工具',
+            updatedAt: item.updatedAt || formatNow(),
+            source: 'github',
+            html: item.html || null // 延遲載入 HTML，開啟或編輯時即時抓取
+          }));
+        } else {
+          // 若尚未建立 manifest.json，嘗試直接掃描 tools 資料夾下的 .html 檔案
+          const { owner, repo, branch } = state.ghConfig;
+          const dirUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${folder}?ref=${encodeURIComponent(branch || 'main')}&t=${Date.now()}`;
+          const res = await fetch(dirUrl, { headers: getGitHubHeaders() });
+          if (res.ok) {
+            const files = await res.json();
+            if (Array.isArray(files)) {
+              loadedTools = files
+                .filter(f => f.type === 'file' && /\.html?$/i.test(f.name))
+                .map(f => ({
+                  id: `gh-${f.name}`,
+                  name: f.name.replace(/\.html?$/i, ''),
+                  filename: f.name,
+                  category: '其他',
+                  version: 'v1.0',
+                  icon: '☁️',
+                  description: '從 GitHub 目錄自動偵測的小工具',
+                  updatedAt: formatNow(),
+                  source: 'github',
+                  html: null
+                }));
+            }
+          } else if (res.status !== 404) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || `無法存取倉庫 (${res.status})`);
+          }
+        }
+
+        state.githubTools = loadedTools;
+        const nowStr = formatNow();
+        localStorage.setItem(STORAGE_KEYS.LAST_SYNC, nowStr);
+        updateGitHubStatusUI(true, nowStr);
+        renderTools();
+
+        if (showFeedback) {
+          showToast(`GitHub 同步成功！共載入 ${loadedTools.length} 個雲端小工具`, 'success');
+        }
+        return true;
+      } catch (err) {
+        console.error('GitHub Sync Error:', err);
+        updateGitHubStatusUI(false);
+        showToast(`GitHub 同步失敗：${err.message}`, 'error');
+        return false;
+      } finally {
+        syncIcon.classList.remove('animate-spin');
+      }
+    }
+
+    // 確保工具具有 HTML 內容（若是 GitHub 雲端工具則即時從 API 抓取）
+    async function ensureToolHtml(tool) {
+      if (tool.html) return tool.html;
+      if (tool.source === 'github' && isGitHubConfigured()) {
+        const folder = getCleanPath(state.ghConfig.path);
+        const file = await ghGetFile(`${folder}/${tool.filename}`);
+        if (!file) throw new Error(`找不到雲端檔案：${folder}/${tool.filename}`);
+        tool.html = file.content;
+        return tool.html;
+      }
+      throw new Error('無法取得此工具的程式碼內容');
+    }
+
+    // =========================================================================
+    // 6. 工具合併、篩選與畫面渲染
+    // =========================================================================
+    function getAllTools() {
+      const visibleDemos = DEMO_TOOLS.filter(t => !state.hiddenDemoIds.includes(t.id));
+      // 順序：GitHub 雲端 -> 本地暫存 -> 內建範例
+      return [...state.githubTools, ...state.localTools, ...visibleDemos];
+    }
+
+    function renderCategoryTabs() {
+      const container = document.getElementById('categoryTabs');
+      container.innerHTML = CATEGORIES.map(cat => {
+        const active = state.activeCategory === cat;
+        return `
+          <button
+            onclick="selectCategory('${cat}')"
+            class="px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition ${
+              active
+                ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-bold shadow-md shadow-amber-500/20'
+                : 'bg-[#0b0f17] text-slate-300 border border-slate-700/80 hover:border-amber-500/40 hover:text-amber-200'
+            }"
+          >${cat}</button>
+        `;
+      }).join('');
+    }
+
+    function selectCategory(cat) {
+      state.activeCategory = cat;
+      renderCategoryTabs();
+      renderTools();
+    }
+
+    function getSourceBadge(source) {
+      if (source === 'github') {
+        return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">☁️ GitHub 雲端</span>`;
+      }
+      if (source === 'local') {
+        return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-sky-500/15 text-sky-300 border border-sky-500/30">💾 本地暫存</span>`;
+      }
+      return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">✨ 內建範例</span>`;
+    }
+
+    function renderTools() {
+      const all = getAllTools();
+      const keyword = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+
+      // 更新統計數據
+      document.getElementById('statTotal').textContent = all.length;
+      document.getElementById('statGithub').textContent = state.githubTools.length;
+      document.getElementById('statLocal').textContent = state.localTools.length + DEMO_TOOLS.filter(t => !state.hiddenDemoIds.includes(t.id)).length;
+
+      const filtered = all.filter(tool => {
+        const matchCat = state.activeCategory === '全部' || tool.category === state.activeCategory;
+        const matchKey = !keyword ||
+          tool.name.toLowerCase().includes(keyword) ||
+          (tool.description || '').toLowerCase().includes(keyword) ||
+          (tool.filename || '').toLowerCase().includes(keyword);
+        return matchCat && matchKey;
+      });
+
+      const grid = document.getElementById('toolsGrid');
+      const empty = document.getElementById('emptyState');
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      grid.innerHTML = filtered.map(tool => `
+        <article class="tactical-card rounded-2xl p-5 flex flex-col justify-between gap-4">
+          <div>
+            <!-- 頂部標籤列 -->
+            <div class="flex items-start justify-between gap-2 mb-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-11 h-11 rounded-xl bg-[#0b0f17] border border-amber-500/25 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+                  ${escapeHtml(tool.icon || '🛠️')}
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <h3 class="text-base font-bold text-slate-100 truncate" title="${escapeHtml(tool.name)}">${escapeHtml(tool.name)}</h3>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-amber-300 border border-slate-700 shrink-0">${escapeHtml(tool.version || 'v1.0')}</span>
+                  </div>
+                  <p class="text-[11px] font-mono text-slate-500 truncate mt-0.5">${escapeHtml(tool.filename)}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 分類與來源徽章 -->
+            <div class="flex flex-wrap items-center gap-1.5 mb-3">
+              <span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-red-950/60 text-red-200 border border-red-500/25">${escapeHtml(tool.category)}</span>
+              ${getSourceBadge(tool.source)}
+            </div>
+
+            <!-- 簡介 -->
+            <p class="text-sm text-slate-300/90 leading-relaxed line-clamp-2 min-h-[2.75rem]">
+              ${escapeHtml(tool.description || '無工具簡介')}
+            </p>
+          </div>
+
+          <!-- 底部時間與操作列 -->
+          <div class="pt-3.5 border-t border-slate-800/90 flex flex-col gap-3">
+            <div class="flex items-center justify-between text-[11px] text-slate-500">
+              <span>最後更新：${escapeHtml(tool.updatedAt || '--')}</span>
+              <span class="text-amber-500/80">流星街專用</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="openRunnerById('${escapeHtml(tool.id)}')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 transition active:scale-95">
+                ▶ 啟動工具
+              </button>
+              <button onclick="openEditorById('${escapeHtml(tool.id)}')" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition active:scale-95">
+                ✏️ 編輯 / 更新
+              </button>
+              <button onclick="requestDeleteById('${escapeHtml(tool.id)}')" title="刪除工具" class="p-2 rounded-xl text-xs bg-red-950/40 hover:bg-red-900/70 text-red-300 border border-red-500/25 transition active:scale-95">
+                🗑️
+              </button>
+            </div>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function findToolById(id) {
+      return getAllTools().find(t => t.id === id);
+    }
+
+    // =========================================================================
+    // 7. 小工具沙盒執行視窗 (Runner Modal)
+    // =========================================================================
+    async function openRunnerById(id) {
+      const tool = findToolById(id);
+      if (!tool) return;
+      await openRunnerWithTool(tool);
+    }
+
+    async function openRunnerWithTool(tool) {
+      state.currentRunnerTool = tool;
+      const modal = document.getElementById('runnerModal');
+      const iframe = document.getElementById('runnerIframe');
+      const loading = document.getElementById('runnerLoading');
+
+      document.getElementById('runnerIcon').textContent = tool.icon || '🛠️';
+      document.getElementById('runnerTitle').textContent = tool.name;
+      document.getElementById('runnerVersion').textContent = tool.version || 'v1.0';
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      iframe.srcdoc = '';
+      loading.classList.remove('hidden');
+
+      try {
+        const html = await ensureToolHtml(tool);
+        iframe.srcdoc = html;
+      } catch (err) {
+        showToast(err.message, 'error');
+        iframe.srcdoc = `<div style="color:#fca5a5;font-family:sans-serif;padding:2rem;">載入失敗：${escapeHtml(err.message)}</div>`;
+      } finally {
+        loading.classList.add('hidden');
+      }
+    }
+
+    function reloadRunner() {
+      if (!state.currentRunnerTool) return;
+      const iframe = document.getElementById('runnerIframe');
+      const current = iframe.srcdoc;
+      iframe.srcdoc = '';
+      setTimeout(() => { iframe.srcdoc = current; }, 50);
+    }
+
+    function toggleRunnerFullscreen() {
+      const dialog = document.getElementById('runnerDialog');
+      const btn = document.getElementById('btnFullscreen');
+      dialog.classList.toggle('runner-fullscreen');
+      btn.textContent = dialog.classList.contains('runner-fullscreen') ? '🗗 還原' : '⛶ 全螢幕';
+    }
+
+    async function downloadCurrentTool() {
+      if (!state.currentRunnerTool) return;
+      try {
+        const html = await ensureToolHtml(state.currentRunnerTool);
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = state.currentRunnerTool.filename || 'sanmou-tool.html';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast(`已開始下載 ${a.download}`, 'success');
+      } catch (err) {
+        showToast(`下載失敗：${err.message}`, 'error');
+      }
+    }
+
+    function closeRunnerModal() {
+      const modal = document.getElementById('runnerModal');
+      const dialog = document.getElementById('runnerDialog');
+      dialog.classList.remove('runner-fullscreen');
+      document.getElementById('btnFullscreen').textContent = '⛶ 全螢幕';
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.getElementById('runnerIframe').srcdoc = '';
+    }
+
+    // =========================================================================
+    // 8. 上傳 / 編輯器視窗 (Editor Modal) & 推送到 GitHub
+    // =========================================================================
+    function openEditorModal(tool = null) {
+      const modal = document.getElementById('editorModal');
+      document.getElementById('editorModalTitle').textContent = tool ? `編輯 / 更新工具：${tool.name}` : '上傳 / 新增三謀小工具';
+
+      document.getElementById('editToolId').value = tool ? tool.id : '';
+      document.getElementById('editToolSource').value = tool ? tool.source : '';
+      document.getElementById('inputToolName').value = tool ? tool.name : '';
+      document.getElementById('inputFileName').value = tool ? tool.filename : '';
+      document.getElementById('inputCategory').value = tool ? tool.category : '開荒計算';
+      document.getElementById('inputVersion').value = tool ? tool.version : 'v1.0';
+      document.getElementById('inputIcon').value = tool ? (tool.icon || '⚔️') : '⚔️';
+      document.getElementById('inputDescription').value = tool ? (tool.description || '') : '';
+      document.getElementById('inputCommitMsg').value = tool ? `update: 更新 ${tool.name} (${tool.version || 'v1.0'})` : 'feat: 新增三謀小工具';
+      document.getElementById('inputCode').value = tool ? (tool.html || '') : '';
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    async function openEditorById(id) {
+      const tool = findToolById(id);
+      if (!tool) return;
+      if (tool.source === 'github' && !tool.html) {
+        showToast('正在從 GitHub 讀取原始碼...', 'info');
+        try {
+          await ensureToolHtml(tool);
+        } catch (err) {
+          showToast(`讀取原始碼失敗：${err.message}`, 'error');
+          return;
+        }
+      }
+      openEditorModal(tool);
+    }
+
+    function closeEditorModal() {
+      const modal = document.getElementById('editorModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function loadStarterTemplate() {
+      const name = document.getElementById('inputToolName').value.trim() || '我的三謀小工具';
+      document.getElementById('inputCode').value = `<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${name}</title>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+</head>
+<body class="bg-[#0b0f17] text-slate-100 p-6 font-sans">
+  <div class="max-w-lg mx-auto bg-[#131a26] border border-amber-500/30 rounded-2xl p-5">
+    <h1 class="text-xl font-bold text-amber-300 mb-2">⚔️ ${name}</h1>
+    <p class="text-sm text-slate-400 mb-4">流星街專用小工具・作者：飛羽舞霜</p>
+    <button onclick="document.getElementById('msg').textContent='工具運作正常！'" class="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-sm">
+      測試按鈕
+    </button>
+    <p id="msg" class="mt-3 text-emerald-400 text-sm"></p>
+  </div>
+</body>
+</html>`;
+      showToast('已載入空白三謀深色範本', 'info');
+    }
+
+    function previewEditorCode() {
+      const code = document.getElementById('inputCode').value.trim();
+      if (!code) {
+        showToast('請先輸入或上傳 HTML 程式碼', 'warning');
+        return;
+      }
+      openRunnerWithTool({
+        id: 'preview-temp',
+        name: document.getElementById('inputToolName').value.trim() || '即時預覽',
+        filename: document.getElementById('inputFileName').value.trim() || 'preview.html',
+        version: document.getElementById('inputVersion').value.trim() || '預覽版',
+        icon: document.getElementById('inputIcon').value.trim() || '👁️',
+        html: code,
+        source: 'local'
+      });
+    }
+
+    function collectEditorForm() {
+      const name = document.getElementById('inputToolName').value.trim();
+      let filename = document.getElementById('inputFileName').value.trim();
+      const category = document.getElementById('inputCategory').value;
+      const version = document.getElementById('inputVersion').value.trim() || 'v1.0';
+      const icon = document.getElementById('inputIcon').value.trim() || '🛠️';
+      const description = document.getElementById('inputDescription').value.trim();
+      const commitMsg = document.getElementById('inputCommitMsg').value.trim() || `chore: 更新 ${name}`;
+      const html = document.getElementById('inputCode').value;
+
+      if (!name) throw new Error('請填寫「工具名稱」');
+      if (!filename) throw new Error('請填寫「檔案名稱」（例如 my-tool.html）');
+      if (!/\.html?$/i.test(filename)) filename += '.html';
+      // 淨化檔名，避免不合法路徑字元
+      filename = filename.replace(/[\\/:*?"<>|\s]+/g, '-');
+      if (!html.trim()) throw new Error('程式碼內容不可為空');
+
+      return { name, filename, category, version, icon, description, commitMsg, html };
+    }
+
+    // 儲存至本地瀏覽器
+    function saveToolLocally() {
+      try {
+        const form = collectEditorForm();
+        const existingId = document.getElementById('editToolId').value;
+        const newTool = {
+          id: (existingId && existingId.startsWith('local-')) ? existingId : `local-${Date.now()}`,
+          name: form.name,
+          filename: form.filename,
+          category: form.category,
+          version: form.version,
+          icon: form.icon,
+          description: form.description,
+          updatedAt: formatNow(),
+          source: 'local',
+          html: form.html
+        };
+
+        const idx = state.localTools.findIndex(t => t.id === newTool.id);
+        if (idx >= 0) {
+          state.localTools[idx] = newTool;
+        } else {
+          state.localTools.unshift(newTool);
+        }
+
+        persistLocalTools();
+        renderTools();
+        closeEditorModal();
+        showToast(`已將「${newTool.name}」儲存至本地瀏覽器`, 'success');
+      } catch (err) {
+        showToast(err.message, 'warning');
+      }
+    }
+
+    // 推送到 GitHub (上傳 / 更新 HTML 並同步 manifest.json)
+    async function pushToolToGitHub() {
+      if (!isGitHubConfigured()) {
+        showToast('請先完成 GitHub API 設定才能推送至雲端', 'warning');
+        openSettingsModal();
+        return;
+      }
+
+      let form;
+      try {
+        form = collectEditorForm();
+      } catch (err) {
+        showToast(err.message, 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('btnPushGithub');
+      const spinner = document.getElementById('pushSpinner');
+      const btnText = document.getElementById('pushBtnText');
+
+      btn.disabled = true;
+      spinner.classList.remove('hidden');
+      btnText.textContent = '正在推送至 GitHub...';
+
+      try {
+        const folder = getCleanPath(state.ghConfig.path);
+        const toolPath = `${folder}/${form.filename}`;
+
+        // 步驟 1：推送工具 HTML 檔案
+        await ghPutFile(toolPath, form.html, form.commitMsg);
+
+        // 步驟 2：讀取最新 manifest.json 並合併更新
+        const manifestPath = `${folder}/manifest.json`;
+        let manifestList = [];
+        const existingManifest = await ghGetFile(manifestPath);
+        if (existingManifest && existingManifest.content) {
+          try {
+            const parsed = JSON.parse(existingManifest.content);
+            manifestList = Array.isArray(parsed) ? parsed : (parsed.tools || []);
+          } catch (_) {
+            manifestList = [];
+          }
+        }
+
+        const metaEntry = {
+          id: `gh-${form.filename}`,
+          name: form.name,
+          filename: form.filename,
+          category: form.category,
+          version: form.version,
+          icon: form.icon,
+          description: form.description,
+          author: '飛羽舞霜',
+          alliance: '流星街專用',
+          updatedAt: formatNow()
+        };
+
+        const idx = manifestList.findIndex(item => item.filename === form.filename);
+        if (idx >= 0) {
+          manifestList[idx] = metaEntry;
+        } else {
+          manifestList.unshift(metaEntry);
+        }
+
+        const manifestPayload = JSON.stringify({
+          platform: '三謀 AI 小工具管理平台',
+          alliance: '流星街專用',
+          author: '飛羽舞霜',
+          updatedAt: formatNow(),
+          tools: manifestList
+        }, null, 2);
+
+        await ghPutFile(manifestPath, manifestPayload, `chore(manifest): 同步 ${form.filename} 清單`);
+
+        // 更新前端記憶體狀態
+        const ghIdx = state.githubTools.findIndex(t => t.filename === form.filename);
+        const fullTool = { ...metaEntry, source: 'github', html: form.html };
+        if (ghIdx >= 0) {
+          state.githubTools[ghIdx] = fullTool;
+        } else {
+          state.githubTools.unshift(fullTool);
+        }
+
+        const nowStr = formatNow();
+        localStorage.setItem(STORAGE_KEYS.LAST_SYNC, nowStr);
+        updateGitHubStatusUI(true, nowStr);
+        renderTools();
+        closeEditorModal();
+        showToast(`🚀「${form.name}」已成功推送並更新至 GitHub！`, 'success');
+      } catch (err) {
+        console.error('Push to GitHub Error:', err);
+        showToast(`推送失敗：${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        spinner.classList.add('hidden');
+        btnText.textContent = '🚀 推送到 GitHub (上傳 / 更新)';
+      }
+    }
+
+    // 處理檔案選擇與拖曳上傳
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (file) readUploadedHtmlFile(file);
+      event.target.value = '';
+    }
+
+    function readUploadedHtmlFile(file) {
+      if (!/\.html?$/i.test(file.name)) {
+        showToast('請上傳 .html 或 .htm 格式的檔案', 'warning');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = e => {
+        const content = e.target.result;
+        document.getElementById('inputCode').value = content;
+        document.getElementById('inputFileName').value = file.name;
+        if (!document.getElementById('inputToolName').value.trim()) {
+          // 嘗試從 <title> 擷取工具名稱
+          const match = content.match(/<title[^>]*>([^<]+)<\/title>/i);
+          document.getElementById('inputToolName').value = match ? match[1].trim() : file.name.replace(/\.html?$/i, '');
+        }
+        showToast(`已載入檔案：${file.name}`, 'success');
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    // =========================================================================
+    // 9. 刪除工具邏輯（含 GitHub DELETE API）
+    // =========================================================================
+    function requestDeleteById(id) {
+      const tool = findToolById(id);
+      if (!tool) return;
+      state.pendingDeleteTool = tool;
+
+      document.getElementById('deleteTargetName').textContent = `${tool.icon || '🛠️'} ${tool.name} (${tool.filename})`;
+      const descEl = document.getElementById('deleteDesc');
+
+      if (tool.source === 'github') {
+        descEl.textContent = '此工具位於 GitHub 雲端倉庫，確認刪除將會呼叫 GitHub API 移除該檔案並同步更新 manifest.json。此動作可在 Git 歷史中還原。';
+      } else if (tool.source === 'local') {
+        descEl.textContent = '確認要從本地瀏覽器移除這個暫存工具嗎？刪除後將無法復原。';
+      } else {
+        descEl.textContent = '這是內建範例工具，刪除後會從首頁隱藏（您隨時可在重設本地資料後恢復）。';
+      }
+
+      const modal = document.getElementById('deleteModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeDeleteModal() {
+      const modal = document.getElementById('deleteModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      state.pendingDeleteTool = null;
+    }
+
+    async function executeDeleteTool() {
+      const tool = state.pendingDeleteTool;
+      if (!tool) return;
+
+      const btn = document.getElementById('btnConfirmDelete');
+      const spinner = document.getElementById('deleteSpinner');
+      btn.disabled = true;
+      spinner.classList.remove('hidden');
+
+      try {
+        if (tool.source === 'github') {
+          if (!isGitHubConfigured()) throw new Error('尚未設定 GitHub API');
+          const folder = getCleanPath(state.ghConfig.path);
+          await ghDeleteFile(`${folder}/${tool.filename}`, `delete: 移除小工具 ${tool.filename}`);
+
+          // 更新 manifest.json
+          const manifestPath = `${folder}/manifest.json`;
+          const existingManifest = await ghGetFile(manifestPath);
+          if (existingManifest && existingManifest.content) {
+            const parsed = JSON.parse(existingManifest.content);
+            const list = (Array.isArray(parsed) ? parsed : (parsed.tools || []))
+              .filter(item => item.filename !== tool.filename);
+
+            const payload = JSON.stringify({
+              platform: '三謀 AI 小工具管理平台',
+              alliance: '流星街專用',
+              author: '飛羽舞霜',
+              updatedAt: formatNow(),
+              tools: list
+            }, null, 2);
+
+            await ghPutFile(manifestPath, payload, `chore(manifest): 移除 ${tool.filename}`);
+          }
+
+          state.githubTools = state.githubTools.filter(t => t.id !== tool.id);
+          showToast(`已從 GitHub 刪除「${tool.name}」`, 'success');
+        } else if (tool.source === 'local') {
+          state.localTools = state.localTools.filter(t => t.id !== tool.id);
+          persistLocalTools();
+          showToast(`已刪除本地工具「${tool.name}」`, 'success');
+        } else {
+          state.hiddenDemoIds.push(tool.id);
+          localStorage.setItem(STORAGE_KEYS.HIDDEN_DEMOS, JSON.stringify(state.hiddenDemoIds));
+          showToast(`已隱藏內建範例「${tool.name}」`, 'info');
+        }
+
+        renderTools();
+        closeDeleteModal();
+      } catch (err) {
+        showToast(`刪除失敗：${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        spinner.classList.add('hidden');
+      }
+    }
+
+    // =========================================================================
+    // 10. GitHub 設定視窗與狀態持久化
+    // =========================================================================
+    function openSettingsModal() {
+      const cfg = state.ghConfig || {};
+      document.getElementById('cfgOwner').value = cfg.owner || '';
+      document.getElementById('cfgRepo').value = cfg.repo || '';
+      document.getElementById('cfgBranch').value = cfg.branch || 'main';
+      document.getElementById('cfgPath').value = cfg.path || 'tools';
+      document.getElementById('cfgToken').value = cfg.token || '';
+      document.getElementById('cfgToken').type = 'password';
+      document.getElementById('btnToggleToken').textContent = '顯示';
+
+      const modal = document.getElementById('settingsModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeSettingsModal() {
+      const modal = document.getElementById('settingsModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function toggleTokenVisibility() {
+      const input = document.getElementById('cfgToken');
+      const btn = document.getElementById('btnToggleToken');
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '隱藏';
+      } else {
+        input.type = 'password';
+        btn.textContent = '顯示';
+      }
+    }
+
+    async function saveGitHubSettings(shouldSync) {
+      const owner = document.getElementById('cfgOwner').value.trim();
+      const repo = document.getElementById('cfgRepo').value.trim();
+      const branch = document.getElementById('cfgBranch').value.trim() || 'main';
+      const path = getCleanPath(document.getElementById('cfgPath').value.trim() || 'tools');
+      const token = document.getElementById('cfgToken').value.trim();
+
+      if (!owner || !repo || !token) {
+        showToast('請完整填寫 Owner、Repository 名稱與 Token', 'warning');
+        return;
+      }
+
+      state.ghConfig = { owner, repo, branch, path, token };
+      localStorage.setItem(STORAGE_KEYS.GH_CONFIG, JSON.stringify(state.ghConfig));
+      updateGitHubStatusUI(false);
+
+      if (shouldSync) {
+        const ok = await syncFromGitHub(true);
+        if (ok) closeSettingsModal();
+      } else {
+        showToast('GitHub 設定已儲存至本機瀏覽器', 'success');
+        closeSettingsModal();
+      }
+    }
+
+    function clearGitHubSettings() {
+      localStorage.removeItem(STORAGE_KEYS.GH_CONFIG);
+      localStorage.removeItem(STORAGE_KEYS.LAST_SYNC);
+      state.ghConfig = null;
+      state.githubTools = [];
+      updateGitHubStatusUI(false);
+      renderTools();
+      closeSettingsModal();
+      showToast('已清除 GitHub 連線設定', 'info');
+    }
+
+    function updateGitHubStatusUI(connected, syncTime = null) {
+      const dot = document.getElementById('githubStatusDot');
+      const text = document.getElementById('githubStatusText');
+      const pill = document.getElementById('githubStatusPill');
+      const statSync = document.getElementById('statSyncTime');
+
+      if (connected && isGitHubConfigured()) {
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]';
+        text.textContent = `已連接 GitHub (${state.ghConfig.owner}/${state.ghConfig.repo})`;
+        pill.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-emerald-200';
+        statSync.textContent = syncTime || localStorage.getItem(STORAGE_KEYS.LAST_SYNC) || '已同步';
+      } else if (isGitHubConfigured()) {
+        dot.className = 'w-2 h-2 rounded-full bg-amber-400';
+        text.textContent = `已設定 (${state.ghConfig.repo}) · 待同步`;
+        pill.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-950/60 border border-amber-500/40 text-amber-200';
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-slate-500';
+        text.textContent = '未連接 GitHub';
+        pill.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-800/90 border border-slate-700 text-slate-300';
+        statSync.textContent = '未連接雲端';
+      }
+    }
+
+    function persistLocalTools() {
+      localStorage.setItem(STORAGE_KEYS.LOCAL_TOOLS, JSON.stringify(state.localTools));
+    }
+
+    // =========================================================================
+    // 11. 初始化與拖曳事件綁定
+    // =========================================================================
+    function initDropzone() {
+      const dz = document.getElementById('fileDropzone');
+      ['dragenter', 'dragover'].forEach(evt => {
+        dz.addEventListener(evt, e => {
+          e.preventDefault();
+          e.stopPropagation();
+          dz.classList.add('dropzone-active');
+        });
+      });
+      ['dragleave', 'drop'].forEach(evt => {
+        dz.addEventListener(evt, e => {
+          e.preventDefault();
+          e.stopPropagation();
+          dz.classList.remove('dropzone-active');
+        });
+      });
+      dz.addEventListener('drop', e => {
+        const file = e.dataTransfer.files[0];
+        if (file) readUploadedHtmlFile(file);
+      });
+    }
+
+    function initApp() {
+      try {
+        const savedCfg = localStorage.getItem(STORAGE_KEYS.GH_CONFIG);
+        if (savedCfg) state.ghConfig = JSON.parse(savedCfg);
+
+        const savedLocal = localStorage.getItem(STORAGE_KEYS.LOCAL_TOOLS);
+        if (savedLocal) state.localTools = JSON.parse(savedLocal);
+
+        const savedHidden = localStorage.getItem(STORAGE_KEYS.HIDDEN_DEMOS);
+        if (savedHidden) state.hiddenDemoIds = JSON.parse(savedHidden);
+      } catch (e) {
+        console.warn('讀取本機快取失敗，使用預設狀態', e);
+      }
+
+      renderCategoryTabs();
+      updateGitHubStatusUI(false);
+      renderTools();
+      initDropzone();
+
+      // 若已設定 GitHub，啟動時自動靜默同步
+      if (isGitHubConfigured()) {
+        syncFromGitHub(false);
+      }
+
+      // ESC 鍵關閉彈窗
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+          closeRunnerModal();
+          closeEditorModal();
+          closeSettingsModal();
+          closeDeleteModal();
+        }
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
