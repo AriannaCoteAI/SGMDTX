@@ -344,12 +344,14 @@
           </div>
           <div>
             <label class="block text-xs font-medium text-slate-300 mb-1">分類</label>
-            <select id="inputCategory" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm text-white outline-none">
-              <option value="開荒計算">開荒計算</option>
-              <option value="陣容配將">陣容配將</option>
-              <option value="同盟管理">同盟管理</option>
-              <option value="戰報 AI">戰報 AI</option>
-              <option value="其他">其他</option>
+            <select id="inputCategory" onchange="onCategoryChange()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm text-white outline-none">
+              <option value="攻城同盟">🏰 攻城同盟</option>
+              <option value="陣容配將">⚔️ 陣容配將</option>
+              <option value="開荒計算">🧮 開荒計算</option>
+              <option value="AI 輔助">🤖 AI 輔助</option>
+              <option value="資源管理">💰 資源管理</option>
+              <option value="數據查詢">📊 數據查詢</option>
+              <option value="其他工具">🛠️ 其他工具</option>
             </select>
           </div>
         </div>
@@ -360,8 +362,11 @@
             <input id="inputVersion" type="text" value="v1.0" placeholder="v1.0" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm font-mono text-white outline-none" />
           </div>
           <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">圖示 Emoji</label>
-            <input id="inputIcon" type="text" value="⚔️" placeholder="⚔️" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm text-white outline-none" />
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-xs font-medium text-slate-300">圖示 Emoji</label>
+              <span id="emojiSyncBadge" class="text-[10px] text-amber-400/90 transition-opacity">🔄 隨分類同步</span>
+            </div>
+            <input id="inputIcon" type="text" value="🏰" placeholder="🏰" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm text-white outline-none transition" />
           </div>
           <div class="sm:col-span-2">
             <label class="block text-xs font-medium text-slate-300 mb-1">Git Commit 備註</label>
@@ -371,7 +376,7 @@
 
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1">工具簡介</label>
-          <input id="inputDescription" type="text" placeholder="簡短說明這個小工具的功能與使用情境..." class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm text-white outline-none" />
+          <input id="inputDescription" type="text" placeholder="簡短說明這個小工具的功能與使用情境（上傳或貼上 HTML 將自動填寫）..." class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm text-white outline-none" />
         </div>
 
         <!-- 檔案拖曳上傳區 -->
@@ -382,14 +387,17 @@
         >
           <input id="htmlFileInput" type="file" accept=".html,.htm" class="hidden" onchange="handleFileSelect(event)" />
           <p class="text-sm text-slate-300 font-medium">📂 點擊選擇或將本機 <span class="text-amber-300 font-mono">.html</span> 檔案拖曳至此處</p>
-          <p class="text-xs text-slate-500 mt-1">自動帶入檔名與完整程式碼內容，支援 UTF-8 繁體中文</p>
+          <p class="text-xs text-slate-500 mt-1">自動解析工具名稱、簡介、分類與 Logo Emoji，支援 UTF-8 繁體中文</p>
         </div>
 
         <!-- 程式碼編輯器 -->
         <div>
           <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
             <label class="text-xs font-medium text-slate-300">小工具完整 HTML / CSS / JS 程式碼 *</label>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" onclick="autoDetectMetadata(true)" class="px-2.5 py-1 rounded-lg text-xs bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition">
+                ✨ 自動偵測名稱與簡介
+              </button>
               <button type="button" onclick="loadStarterTemplate()" class="px-2.5 py-1 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
                 📄 載入空白範本
               </button>
@@ -532,195 +540,33 @@
   <!-- ==================== 核心應用程式邏輯 ==================== -->
   <script>
     // =========================================================================
-    // 1. 內建 4 款三謀實戰範例小工具 (完整自包含 HTML，開箱即用)
+    // 1. 內建預設小工具（僅保留流星街攻城集結生成器，完整自包含 HTML）
     // =========================================================================
 
     const DEMO_TOOLS = [
       {
-        id: 'demo-stamina-calc',
-        name: '開荒體力與時間計算器',
-        filename: 'stamina-calculator.html',
-        category: '開荒計算',
-        version: 'v1.2',
-        icon: '⚡',
-        description: '精準計算武將體力自然回滿時間、目標體力達成時刻，以及當前可執行的開荒打地次數。',
-        source: 'builtin',
-        updatedAt: '2026-11-20 20:00',
-        html: `<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<script src="https://cdn.tailwindcss.com"><\/script>
-<style>body{background:#0b0f17;color:#e2e8f0;font-family:"Noto Sans TC",sans-serif;}</style>
-</head>
-<body class="p-4 sm:p-6">
-  <div class="max-w-xl mx-auto bg-[#131a26] border border-amber-500/30 rounded-2xl p-5 shadow-xl">
-    <div class="flex items-center justify-between mb-4">
-      <h1 class="text-lg font-bold text-amber-300">⚡ 開荒體力與時間計算器</h1>
-      <span class="text-xs px-2 py-0.5 rounded bg-red-900/60 text-amber-200 border border-amber-500/30">流星街專用</span>
-    </div>
-    <div class="grid grid-cols-2 gap-3 mb-4">
-      <div>
-        <label class="text-xs text-slate-400 block mb-1">目前體力</label>
-        <input id="cur" type="number" value="45" min="0" max="300" oninput="calc()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-amber-200 font-bold outline-none focus:border-amber-400">
-      </div>
-      <div>
-        <label class="text-xs text-slate-400 block mb-1">目標 / 上限體力</label>
-        <input id="max" type="number" value="120" min="1" max="300" oninput="calc()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-white font-bold outline-none focus:border-amber-400">
-      </div>
-      <div>
-        <label class="text-xs text-slate-400 block mb-1">每恢復 1 點體力 (分鐘)</label>
-        <input id="rate" type="number" value="3" min="1" max="30" oninput="calc()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-white outline-none focus:border-amber-400">
-      </div>
-      <div>
-        <label class="text-xs text-slate-400 block mb-1">單次打地消耗體力</label>
-        <input id="cost" type="number" value="20" min="1" max="60" oninput="calc()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-white outline-none focus:border-amber-400">
-      </div>
-    </div>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-      <div class="p-3.5 rounded-xl bg-[#0b0f17] border border-slate-800 text-center">
-        <div class="text-xs text-slate-400">目前可打地次數</div>
-        <div id="nowRuns" class="text-2xl font-black text-emerald-400 mt-1">2 次</div>
-      </div>
-      <div class="p-3.5 rounded-xl bg-[#0b0f17] border border-slate-800 text-center">
-        <div class="text-xs text-slate-400">回滿所需時間</div>
-        <div id="waitTime" class="text-xl font-black text-amber-300 mt-1">3小時 45分</div>
-      </div>
-      <div class="p-3.5 rounded-xl bg-[#0b0f17] border border-slate-800 text-center">
-        <div class="text-xs text-slate-400">預計達成時間</div>
-        <div id="finishAt" class="text-lg font-black text-sky-300 mt-1">--:--</div>
-      </div>
-    </div>
-    <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-200 leading-relaxed" id="tipBox">
-      計算結果將即時顯示於此。
-    </div>
-  </div>
-  <script>
-    function calc(){
-      const cur = Math.max(0, Number(document.getElementById('cur').value)||0);
-      const max = Math.max(1, Number(document.getElementById('max').value)||120);
-      const rate = Math.max(1, Number(document.getElementById('rate').value)||3);
-      const cost = Math.max(1, Number(document.getElementById('cost').value)||20);
-      const nowRuns = Math.floor(cur / cost);
-      const maxRuns = Math.floor(max / cost);
-      const diff = Math.max(0, max - cur);
-      const mins = diff * rate;
-      const hrs = Math.floor(mins / 60);
-      const remMins = mins % 60;
-      const targetDate = new Date(Date.now() + mins * 60000);
-      const hh = String(targetDate.getHours()).padStart(2,'0');
-      const mm = String(targetDate.getMinutes()).padStart(2,'0');
-      const nextNeed = Math.max(0, ((nowRuns + 1) * cost) - cur);
-      const nextMins = nextNeed * rate;
-      document.getElementById('nowRuns').textContent = nowRuns + ' 次';
-      document.getElementById('waitTime').textContent = diff === 0 ? '已達標' : (hrs > 0 ? hrs + '小時 ' : '') + remMins + '分';
-      document.getElementById('finishAt').textContent = diff === 0 ? '現在' : hh + ':' + mm;
-      document.getElementById('tipBox').innerHTML =
-        '📌 距離「下一次出征（共 ' + (nowRuns+1) + ' 次）」還差 <b>' + nextNeed + '</b> 點體力，約需等待 <b>' + nextMins + ' 分鐘</b>。<br>' +
-        '📌 體力達到 ' + max + ' 時，最多可連續打地 <b>' + maxRuns + ' 次</b>（剩餘 ' + (max % cost) + ' 體力）。';
-    }
-    calc();
-  <\/script>
-</body>
-</html>`
-      },
-      {
-        id: 'demo-troop-counter',
-        name: '兵種克制與陣容速查表',
-        filename: 'troop-counter-sheet.html',
-        category: '陣容配將',
-        version: 'v1.1',
-        icon: '🛡️',
-        description: '互動式盾、槍、弓、騎兵種克制查詢，內建個人主力配將筆記本（自動本地存檔）。',
-        source: 'builtin',
-        updatedAt: '2026-11-20 20:15',
-        html: `<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<script src="https://cdn.tailwindcss.com"><\/script>
-<style>body{background:#0b0f17;color:#e2e8f0;font-family:"Noto Sans TC",sans-serif;}</style>
-</head>
-<body class="p-4 sm:p-6">
-  <div class="max-w-2xl mx-auto space-y-4">
-    <div class="bg-[#131a26] border border-amber-500/30 rounded-2xl p-5">
-      <div class="flex items-center justify-between mb-3">
-        <h1 class="text-lg font-bold text-amber-300">🛡️ 兵種克制互動速查</h1>
-        <span class="text-xs text-slate-400">點擊敵方兵種查看最佳應對</span>
-      </div>
-      <div class="grid grid-cols-4 gap-2.5 mb-4">
-        <button onclick="selectTroop('盾兵')" id="btn-盾兵" class="troop-btn py-3 rounded-xl bg-[#0b0f17] border border-slate-700 hover:border-amber-400 font-bold text-sm transition">🛡️ 盾兵</button>
-        <button onclick="selectTroop('弓兵')" id="btn-弓兵" class="troop-btn py-3 rounded-xl bg-[#0b0f17] border border-slate-700 hover:border-amber-400 font-bold text-sm transition">🏹 弓兵</button>
-        <button onclick="selectTroop('槍兵')" id="btn-槍兵" class="troop-btn py-3 rounded-xl bg-[#0b0f17] border border-slate-700 hover:border-amber-400 font-bold text-sm transition">🔱 槍兵</button>
-        <button onclick="selectTroop('騎兵')" id="btn-騎兵" class="troop-btn py-3 rounded-xl bg-[#0b0f17] border border-slate-700 hover:border-amber-400 font-bold text-sm transition">🐎 騎兵</button>
-      </div>
-      <div id="resultBox" class="p-4 rounded-xl bg-[#0b0f17] border border-slate-800 space-y-2 text-sm"></div>
-      <div class="mt-3 text-xs text-slate-400 text-center">
-        克制循環：<span class="text-amber-300 font-bold">盾兵 ➔ 弓兵 ➔ 槍兵 ➔ 騎兵 ➔ 盾兵</span>
-      </div>
-    </div>
-
-    <div class="bg-[#131a26] border border-slate-800 rounded-2xl p-5">
-      <div class="flex items-center justify-between mb-2">
-        <h2 class="text-sm font-bold text-amber-200">📝 我的主力配將速記（自動儲存）</h2>
-        <span id="saveHint" class="text-xs text-emerald-400 opacity-0 transition">已自動儲存</span>
-      </div>
-      <textarea id="notes" rows="5" oninput="saveNotes()" placeholder="記錄你的主力陣容、戰法搭配、加點與紅度..." class="w-full p-3 rounded-xl bg-[#0b0f17] border border-slate-700 focus:border-amber-400 text-sm text-slate-200 outline-none"></textarea>
-    </div>
-  </div>
-  <script>
-    const DATA = {
-      '盾兵': { strong: '弓兵', weak: '騎兵', tip: '敵方為盾兵時，建議派出【騎兵】隊伍強攻破防；避免使用【弓兵】硬撞前排。' },
-      '弓兵': { strong: '槍兵', weak: '盾兵', tip: '敵方為弓兵時，建議派出【盾兵】高減傷隊伍反打；避免使用【槍兵】遭遠程壓制。' },
-      '槍兵': { strong: '騎兵', weak: '弓兵', tip: '敵方為槍兵時，建議派出【弓兵】高爆發輸出；避免使用【騎兵】正面衝鋒。' },
-      '騎兵': { strong: '盾兵', weak: '槍兵', tip: '敵方為騎兵時，建議派出【槍兵】迎擊克制；避免使用【盾兵】被機動突擊。' }
-    };
-    function selectTroop(t){
-      document.querySelectorAll('.troop-btn').forEach(b => b.className = 'troop-btn py-3 rounded-xl bg-[#0b0f17] border border-slate-700 hover:border-amber-400 font-bold text-sm transition text-slate-200');
-      document.getElementById('btn-'+t).className = 'troop-btn py-3 rounded-xl bg-amber-500/20 border border-amber-400 font-bold text-sm transition text-amber-200';
-      const d = DATA[t];
-      document.getElementById('resultBox').innerHTML =
-        '<div class="flex flex-wrap gap-3">' +
-          '<span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold">✅ 建議派出：' + d.weak + '（克制敵方）</span>' +
-          '<span class="px-2.5 py-1 rounded-lg bg-red-500/15 border border-red-500/30 text-red-300 font-bold">❌ 切忌派出：' + d.strong + '（被敵方克制）</span>' +
-        '</div>' +
-        '<p class="text-slate-300 pt-1">' + d.tip + '</p>';
-    }
-    const notesEl = document.getElementById('notes');
-    notesEl.value = localStorage.getItem('sanmou_troop_notes') || '一隊：【桃園盾】劉備 + 張飛 + 關羽\\n二隊：【大都督弓】周瑜 + 陸遜 + 呂蒙';
-    function saveNotes(){
-      localStorage.setItem('sanmou_troop_notes', notesEl.value);
-      const h = document.getElementById('saveHint');
-      h.style.opacity = '1';
-      setTimeout(()=> h.style.opacity = '0', 1200);
-    }
-    selectTroop('盾兵');
-  <\/script>
-</body>
-</html>`
-      },
-      {
         id: 'demo-siege-rally',
         name: '流星街攻城集結生成器',
         filename: 'meteor-siege-rally.html',
-        category: '同盟管理',
+        category: '攻城同盟',
         version: 'v1.3',
-        icon: '🚩',
-        description: '快速產生格式整齊的同盟攻城、鋪路、集結發車公告，一鍵複製貼上至微信/QQ/Discord 群組。',
+        icon: '🏰',
+        description: '快速產生格式整齊的同盟攻城、鋪路、集結發車公告，支援目標城池、集結時間、座標與隊伍要求，一鍵複製貼上。',
         source: 'builtin',
         updatedAt: '2026-11-21 14:30',
         html: `<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>流星街攻城集結生成器</title>
 <script src="https://cdn.tailwindcss.com"><\/script>
 <style>body{background:#0b0f17;color:#e2e8f0;font-family:"Noto Sans TC",sans-serif;}</style>
 </head>
 <body class="p-4 sm:p-6">
   <div class="max-w-2xl mx-auto bg-[#131a26] border border-amber-500/30 rounded-2xl p-5 shadow-xl space-y-4">
     <div class="flex items-center justify-between">
-      <h1 class="text-lg font-bold text-amber-300">🚩 流星街攻城集結公告生成器</h1>
-      <span class="text-xs px-2 py-0.5 rounded bg-red-900/60 text-amber-200 border border-amber-500/30">同盟指揮專用</span>
+      <h1 class="text-lg font-bold text-amber-300">🏰 流星街攻城集結公告生成器</h1>
+      <span class="text-xs px-2 py-0.5 rounded bg-red-900/60 text-amber-200 border border-amber-500/30">流星街專用</span>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div>
@@ -741,7 +587,7 @@
       </div>
     </div>
     <div>
-      <label class="text-xs text-slate-400 block mb-1">戰術要求 / 備註</label>
+      <label class="text-xs text-slate-400 block mb-1">隊伍要求 / 戰術備註</label>
       <input id="note" type="text" value="主力先清守軍，拆遷隊統一聽倒數 3 秒觸城，嚴禁搶跑！" oninput="gen()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-sm text-white outline-none focus:border-amber-400">
     </div>
     <div>
@@ -783,96 +629,11 @@
   <\/script>
 </body>
 </html>`
-      },
-      {
-        id: 'demo-ai-battle-prompt',
-        name: '三謀 AI 戰報分析提示詞生成器',
-        filename: 'ai-battle-prompt.html',
-        category: '戰報 AI',
-        version: 'v1.0',
-        icon: '🤖',
-        description: '輸入雙方陣容、戰法與戰損數據，自動組裝專業結構化 Prompt，貼給 Gemini / ChatGPT 深度復盤戰報。',
-        source: 'builtin',
-        updatedAt: '2026-11-21 22:10',
-        html: `<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<script src="https://cdn.tailwindcss.com"><\/script>
-<style>body{background:#0b0f17;color:#e2e8f0;font-family:"Noto Sans TC",sans-serif;}</style>
-</head>
-<body class="p-4 sm:p-6">
-  <div class="max-w-2xl mx-auto bg-[#131a26] border border-amber-500/30 rounded-2xl p-5 shadow-xl space-y-4">
-    <div class="flex items-center justify-between">
-      <h1 class="text-lg font-bold text-amber-300">🤖 三謀 AI 戰報分析 Prompt 生成器</h1>
-      <span class="text-xs text-slate-400">深度復盤用</span>
-    </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      <div>
-        <label class="text-xs text-slate-400 block mb-1">我方陣容與核心戰法</label>
-        <textarea id="myTeam" rows="2" oninput="gen()" class="w-full p-2.5 rounded-xl bg-[#0b0f17] border border-slate-700 text-xs text-white outline-none focus:border-amber-400">諸葛亮(草船+決水) + 黃月英 + 馬超(橫掃千軍)</textarea>
-      </div>
-      <div>
-        <label class="text-xs text-slate-400 block mb-1">敵方陣容與核心戰法</label>
-        <textarea id="enemyTeam" rows="2" oninput="gen()" class="w-full p-2.5 rounded-xl bg-[#0b0f17] border border-slate-700 text-xs text-white outline-none focus:border-amber-400">曹操(蓄勢待發) + 司馬懿 + 鄧艾</textarea>
-      </div>
-      <div>
-        <label class="text-xs text-slate-400 block mb-1">戰鬥結果</label>
-        <select id="result" onchange="gen()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-sm text-white outline-none">
-          <option value="小敗（戰損較高）">小敗（戰損較高）</option>
-          <option value="慘敗（被低損穿隊）">慘敗（被低損穿隊）</option>
-          <option value="險勝（傷敵一千自損八百）">險勝（傷敵一千自損八百）</option>
-          <option value="大勝（低損吃掉對方）">大勝（低損吃掉對方）</option>
-        </select>
-      </div>
-      <div>
-        <label class="text-xs text-slate-400 block mb-1">雙方戰損概況</label>
-        <input id="loss" type="text" value="我方損兵 14,500，敵方損兵 8,200，第4回合被控場" oninput="gen()" class="w-full px-3 py-2 rounded-xl bg-[#0b0f17] border border-slate-700 text-xs text-white outline-none focus:border-amber-400">
-      </div>
-    </div>
-    <div>
-      <div class="flex items-center justify-between mb-1.5">
-        <span class="text-xs text-slate-400">產生的 AI 分析提示詞</span>
-        <button onclick="copyPrompt()" id="copyBtn" class="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition">📋 複製給 AI 分析</button>
-      </div>
-      <textarea id="promptOut" rows="9" readonly class="w-full p-3.5 rounded-xl bg-[#090d14] border border-slate-700 text-xs font-mono text-emerald-200 leading-relaxed outline-none"></textarea>
-    </div>
-  </div>
-  <script>
-    function gen(){
-      const my = document.getElementById('myTeam').value.trim();
-      const en = document.getElementById('enemyTeam').value.trim();
-      const res = document.getElementById('result').value;
-      const loss = document.getElementById('loss').value.trim();
-      const text =
-        '你是一位《三國：謀定天下》頂尖配將師與戰術分析師，請幫我深度復盤以下戰報：\\n\\n' +
-        '【我方陣容】' + my + '\\n' +
-        '【敵方陣容】' + en + '\\n' +
-        '【戰鬥結果】' + res + '\\n' +
-        '【戰損與關鍵回合】' + loss + '\\n\\n' +
-        '請依序提供以下分析：\\n' +
-        '1. 核心勝負關鍵點（速度線、控場鏈、兵種與陣型站位）\\n' +
-        '2. 我方戰法或韜略可替換的優化方案（給出高配與平民替代方案）\\n' +
-        '3. 未來在戰場遇到同類型敵隊時的避戰或克制策略。';
-      document.getElementById('promptOut').value = text;
-    }
-    function copyPrompt(){
-      const el = document.getElementById('promptOut');
-      el.select();
-      document.execCommand('copy');
-      const btn = document.getElementById('copyBtn');
-      btn.textContent = '✅ 已複製提示詞！';
-      setTimeout(()=> btn.textContent = '📋 複製給 AI 分析', 1800);
-    }
-    gen();
-  <\/script>
-</body>
-</html>`
       }
     ];
 
     // =========================================================================
-    // 2. 全域狀態管理與常數
+    // 2. 全域狀態管理與常數（分類與代表 Emoji 對應表）
     // =========================================================================
     const STORAGE_KEYS = {
       GH_CONFIG: 'sanmou_gh_config_v1',
@@ -881,7 +642,29 @@
       LAST_SYNC: 'sanmou_last_sync_v1'
     };
 
-    const CATEGORIES = ['全部', '開荒計算', '陣容配將', '同盟管理', '戰報 AI', '其他'];
+    const CATEGORY_EMOJI_MAP = {
+      '攻城同盟': '🏰',
+      '陣容配將': '⚔️',
+      '開荒計算': '🧮',
+      'AI 輔助': '🤖',
+      '資源管理': '💰',
+      '數據查詢': '📊',
+      '其他工具': '🛠️'
+    };
+
+    const LEGACY_CATEGORY_MAP = {
+      '同盟管理': '攻城同盟',
+      '戰報 AI': 'AI 輔助',
+      '其他': '其他工具'
+    };
+
+    const CATEGORIES = ['全部', ...Object.keys(CATEGORY_EMOJI_MAP)];
+
+    function normalizeCategory(cat) {
+      if (CATEGORY_EMOJI_MAP[cat]) return cat;
+      if (LEGACY_CATEGORY_MAP[cat]) return LEGACY_CATEGORY_MAP[cat];
+      return '其他工具';
+    }
 
     let state = {
       activeCategory: '全部',
@@ -1069,18 +852,21 @@
         if (manifestFile && manifestFile.content) {
           const parsed = JSON.parse(manifestFile.content);
           const list = Array.isArray(parsed) ? parsed : (parsed.tools || []);
-          loadedTools = list.map(item => ({
-            id: item.id || `gh-${item.filename}`,
-            name: item.name || item.filename,
-            filename: item.filename,
-            category: CATEGORIES.includes(item.category) ? item.category : '其他',
-            version: item.version || 'v1.0',
-            icon: item.icon || '🛠️',
-            description: item.description || '從 GitHub 雲端同步的三謀小工具',
-            updatedAt: item.updatedAt || formatNow(),
-            source: 'github',
-            html: item.html || null // 延遲載入 HTML，開啟或編輯時即時抓取
-          }));
+          loadedTools = list.map(item => {
+            const cat = normalizeCategory(item.category);
+            return {
+              id: item.id || `gh-${item.filename}`,
+              name: item.name || item.filename,
+              filename: item.filename,
+              category: cat,
+              version: item.version || 'v1.0',
+              icon: item.icon || CATEGORY_EMOJI_MAP[cat] || '🛠️',
+              description: item.description || '從 GitHub 雲端同步的三謀小工具',
+              updatedAt: item.updatedAt || formatNow(),
+              source: 'github',
+              html: item.html || null // 延遲載入 HTML，開啟或編輯時即時抓取
+            };
+          });
         } else {
           // 若尚未建立 manifest.json，嘗試直接掃描 tools 資料夾下的 .html 檔案
           const { owner, repo, branch } = state.ghConfig;
@@ -1095,9 +881,9 @@
                   id: `gh-${f.name}`,
                   name: f.name.replace(/\.html?$/i, ''),
                   filename: f.name,
-                  category: '其他',
+                  category: '其他工具',
                   version: 'v1.0',
-                  icon: '☁️',
+                  icon: CATEGORY_EMOJI_MAP['其他工具'],
                   description: '從 GitHub 目錄自動偵測的小工具',
                   updatedAt: formatNow(),
                   source: 'github',
@@ -1144,29 +930,16 @@
     }
 
     // =========================================================================
-    // 6. 工具合併、篩選與畫面渲染
+    // 6. 工具清單整合、統計與首頁卡片渲染
     // =========================================================================
     function getAllTools() {
       const visibleDemos = DEMO_TOOLS.filter(t => !state.hiddenDemoIds.includes(t.id));
-      // 順序：GitHub 雲端 -> 本地暫存 -> 內建範例
+      // 順序：GitHub 雲端工具 -> 本地暫存工具 -> 內建預設工具
       return [...state.githubTools, ...state.localTools, ...visibleDemos];
     }
 
-    function renderCategoryTabs() {
-      const container = document.getElementById('categoryTabs');
-      container.innerHTML = CATEGORIES.map(cat => {
-        const active = state.activeCategory === cat;
-        return `
-          <button
-            onclick="selectCategory('${cat}')"
-            class="px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition ${
-              active
-                ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-bold shadow-md shadow-amber-500/20'
-                : 'bg-[#0b0f17] text-slate-300 border border-slate-700/80 hover:border-amber-500/40 hover:text-amber-200'
-            }"
-          >${cat}</button>
-        `;
-      }).join('');
+    function findToolById(id) {
+      return getAllTools().find(t => t.id === id) || null;
     }
 
     function selectCategory(cat) {
@@ -1175,31 +948,39 @@
       renderTools();
     }
 
-    function getSourceBadge(source) {
-      if (source === 'github') {
-        return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">☁️ GitHub 雲端</span>`;
-      }
-      if (source === 'local') {
-        return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-sky-500/15 text-sky-300 border border-sky-500/30">💾 本地暫存</span>`;
-      }
-      return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">✨ 內建範例</span>`;
+    function renderCategoryTabs() {
+      const container = document.getElementById('categoryTabs');
+      container.innerHTML = CATEGORIES.map(cat => {
+        const isActive = state.activeCategory === cat;
+        const emoji = cat === '全部' ? '🧭' : (CATEGORY_EMOJI_MAP[cat] || '🛠️');
+        const activeCls = isActive
+          ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-bold border-amber-400 shadow-md shadow-amber-500/20'
+          : 'bg-[#0b0f17] text-slate-300 hover:text-amber-200 border-slate-700/80 hover:border-amber-500/40';
+        return `<button onclick="selectCategory('${escapeHtml(cat)}')" class="px-3 py-1.5 rounded-xl text-xs border transition active:scale-95 ${activeCls}">${emoji} ${escapeHtml(cat)}</button>`;
+      }).join('');
+    }
+
+    function updateStats(allTools) {
+      const ghCount = allTools.filter(t => t.source === 'github').length;
+      const localCount = allTools.length - ghCount;
+      document.getElementById('statTotal').textContent = allTools.length;
+      document.getElementById('statGithub').textContent = ghCount;
+      document.getElementById('statLocal').textContent = localCount;
     }
 
     function renderTools() {
-      const all = getAllTools();
+      const allTools = getAllTools();
+      updateStats(allTools);
+
       const keyword = (document.getElementById('searchInput').value || '').trim().toLowerCase();
-
-      // 更新統計數據
-      document.getElementById('statTotal').textContent = all.length;
-      document.getElementById('statGithub').textContent = state.githubTools.length;
-      document.getElementById('statLocal').textContent = state.localTools.length + DEMO_TOOLS.filter(t => !state.hiddenDemoIds.includes(t.id)).length;
-
-      const filtered = all.filter(tool => {
-        const matchCat = state.activeCategory === '全部' || tool.category === state.activeCategory;
+      const filtered = allTools.filter(tool => {
+        const cat = normalizeCategory(tool.category);
+        const matchCat = state.activeCategory === '全部' || cat === state.activeCategory;
         const matchKey = !keyword ||
-          tool.name.toLowerCase().includes(keyword) ||
+          (tool.name || '').toLowerCase().includes(keyword) ||
           (tool.description || '').toLowerCase().includes(keyword) ||
-          (tool.filename || '').toLowerCase().includes(keyword);
+          (tool.filename || '').toLowerCase().includes(keyword) ||
+          cat.toLowerCase().includes(keyword);
         return matchCat && matchKey;
       });
 
@@ -1213,61 +994,59 @@
       }
 
       empty.classList.add('hidden');
-      grid.innerHTML = filtered.map(tool => `
-        <article class="tactical-card rounded-2xl p-5 flex flex-col justify-between gap-4">
-          <div>
-            <!-- 頂部標籤列 -->
-            <div class="flex items-start justify-between gap-2 mb-3">
-              <div class="flex items-center gap-3 min-w-0">
-                <div class="w-11 h-11 rounded-xl bg-[#0b0f17] border border-amber-500/25 flex items-center justify-center text-2xl shrink-0 shadow-inner">
-                  ${escapeHtml(tool.icon || '🛠️')}
-                </div>
-                <div class="min-w-0">
-                  <div class="flex items-center gap-1.5">
-                    <h3 class="text-base font-bold text-slate-100 truncate" title="${escapeHtml(tool.name)}">${escapeHtml(tool.name)}</h3>
-                    <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-amber-300 border border-slate-700 shrink-0">${escapeHtml(tool.version || 'v1.0')}</span>
+      grid.innerHTML = filtered.map(tool => {
+        const cat = normalizeCategory(tool.category);
+        const icon = tool.icon || CATEGORY_EMOJI_MAP[cat] || '🛠️';
+        const sourceBadge = tool.source === 'github'
+          ? '<span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">☁️ GitHub</span>'
+          : tool.source === 'local'
+            ? '<span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-sky-500/15 text-sky-300 border border-sky-500/30">💾 本地暫存</span>'
+            : '<span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">📜 內建預設</span>';
+
+        return `
+          <article class="tactical-card rounded-2xl p-5 flex flex-col justify-between gap-4">
+            <div>
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-12 h-12 rounded-xl bg-[#0b0f17] border border-amber-500/25 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+                    ${escapeHtml(icon)}
                   </div>
-                  <p class="text-[11px] font-mono text-slate-500 truncate mt-0.5">${escapeHtml(tool.filename)}</p>
+                  <div class="min-w-0">
+                    <h3 class="text-base font-bold text-amber-100 truncate" title="${escapeHtml(tool.name)}">${escapeHtml(tool.name)}</h3>
+                    <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                      <span class="px-2 py-0.5 rounded-md text-[11px] bg-slate-800/90 text-slate-300 border border-slate-700">${escapeHtml(cat)}</span>
+                      <span class="px-1.5 py-0.5 rounded-md text-[11px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/25">${escapeHtml(tool.version || 'v1.0')}</span>
+                      ${sourceBadge}
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              <p class="text-sm text-slate-300/90 leading-relaxed mt-3.5 line-clamp-3 min-h-[3.75rem]">
+                ${escapeHtml(tool.description || '流星街專用三謀戰術小工具。')}
+              </p>
             </div>
 
-            <!-- 分類與來源徽章 -->
-            <div class="flex flex-wrap items-center gap-1.5 mb-3">
-              <span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-red-950/60 text-red-200 border border-red-500/25">${escapeHtml(tool.category)}</span>
-              ${getSourceBadge(tool.source)}
+            <div class="pt-3 border-t border-slate-800/90 space-y-3">
+              <div class="flex items-center justify-between text-[11px] text-slate-400">
+                <span class="font-mono truncate max-w-[55%]" title="${escapeHtml(tool.filename)}">📄 ${escapeHtml(tool.filename)}</span>
+                <span>🕒 ${escapeHtml(tool.updatedAt || '')}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="openRunnerById('${escapeHtml(tool.id)}')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 shadow-md shadow-amber-500/15 transition active:scale-95">
+                  <span>▶ 啟動工具</span>
+                </button>
+                <button onclick="openEditorById('${escapeHtml(tool.id)}')" title="編輯 / 更新程式碼" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+                  ✏️ 編輯
+                </button>
+                <button onclick="requestDeleteById('${escapeHtml(tool.id)}')" title="刪除工具" class="px-3 py-2 rounded-xl text-xs font-medium bg-red-950/50 hover:bg-red-900/70 text-red-300 border border-red-500/30 transition">
+                  🗑️
+                </button>
+              </div>
             </div>
-
-            <!-- 簡介 -->
-            <p class="text-sm text-slate-300/90 leading-relaxed line-clamp-2 min-h-[2.75rem]">
-              ${escapeHtml(tool.description || '無工具簡介')}
-            </p>
-          </div>
-
-          <!-- 底部時間與操作列 -->
-          <div class="pt-3.5 border-t border-slate-800/90 flex flex-col gap-3">
-            <div class="flex items-center justify-between text-[11px] text-slate-500">
-              <span>最後更新：${escapeHtml(tool.updatedAt || '--')}</span>
-              <span class="text-amber-500/80">流星街專用</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <button onclick="openRunnerById('${escapeHtml(tool.id)}')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 transition active:scale-95">
-                ▶ 啟動工具
-              </button>
-              <button onclick="openEditorById('${escapeHtml(tool.id)}')" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition active:scale-95">
-                ✏️ 編輯 / 更新
-              </button>
-              <button onclick="requestDeleteById('${escapeHtml(tool.id)}')" title="刪除工具" class="p-2 rounded-xl text-xs bg-red-950/40 hover:bg-red-900/70 text-red-300 border border-red-500/25 transition active:scale-95">
-                🗑️
-              </button>
-            </div>
-          </div>
-        </article>
-      `).join('');
-    }
-
-    function findToolById(id) {
-      return getAllTools().find(t => t.id === id);
+          </article>
+        `;
+      }).join('');
     }
 
     // =========================================================================
@@ -1282,87 +1061,225 @@
     async function openRunnerWithTool(tool) {
       state.currentRunnerTool = tool;
       const modal = document.getElementById('runnerModal');
+      const dialog = document.getElementById('runnerDialog');
       const iframe = document.getElementById('runnerIframe');
       const loading = document.getElementById('runnerLoading');
 
-      document.getElementById('runnerIcon').textContent = tool.icon || '🛠️';
+      dialog.classList.remove('runner-fullscreen');
+      document.getElementById('btnFullscreen').textContent = '⛶ 全螢幕';
+      document.getElementById('runnerIcon').textContent = tool.icon || CATEGORY_EMOJI_MAP[normalizeCategory(tool.category)] || '🛠️';
       document.getElementById('runnerTitle').textContent = tool.name;
       document.getElementById('runnerVersion').textContent = tool.version || 'v1.0';
 
       modal.classList.remove('hidden');
       modal.classList.add('flex');
-      iframe.srcdoc = '';
-      loading.classList.remove('hidden');
 
-      try {
-        const html = await ensureToolHtml(tool);
-        iframe.srcdoc = html;
-      } catch (err) {
-        showToast(err.message, 'error');
-        iframe.srcdoc = `<div style="color:#fca5a5;font-family:sans-serif;padding:2rem;">載入失敗：${escapeHtml(err.message)}</div>`;
-      } finally {
+      iframe.srcdoc = '';
+      if (!tool.html && tool.source === 'github') {
+        loading.classList.remove('hidden');
+        try {
+          const html = await ensureToolHtml(tool);
+          iframe.srcdoc = html;
+        } catch (err) {
+          showToast(`載入失敗：${err.message}`, 'error');
+          closeRunnerModal();
+        } finally {
+          loading.classList.add('hidden');
+        }
+      } else {
         loading.classList.add('hidden');
-      }
-    }
-
-    function reloadRunner() {
-      if (!state.currentRunnerTool) return;
-      const iframe = document.getElementById('runnerIframe');
-      const current = iframe.srcdoc;
-      iframe.srcdoc = '';
-      setTimeout(() => { iframe.srcdoc = current; }, 50);
-    }
-
-    function toggleRunnerFullscreen() {
-      const dialog = document.getElementById('runnerDialog');
-      const btn = document.getElementById('btnFullscreen');
-      dialog.classList.toggle('runner-fullscreen');
-      btn.textContent = dialog.classList.contains('runner-fullscreen') ? '🗗 還原' : '⛶ 全螢幕';
-    }
-
-    async function downloadCurrentTool() {
-      if (!state.currentRunnerTool) return;
-      try {
-        const html = await ensureToolHtml(state.currentRunnerTool);
-        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = state.currentRunnerTool.filename || 'sanmou-tool.html';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-        showToast(`已開始下載 ${a.download}`, 'success');
-      } catch (err) {
-        showToast(`下載失敗：${err.message}`, 'error');
+        iframe.srcdoc = tool.html || '';
       }
     }
 
     function closeRunnerModal() {
       const modal = document.getElementById('runnerModal');
-      const dialog = document.getElementById('runnerDialog');
-      dialog.classList.remove('runner-fullscreen');
-      document.getElementById('btnFullscreen').textContent = '⛶ 全螢幕';
+      const iframe = document.getElementById('runnerIframe');
       modal.classList.add('hidden');
       modal.classList.remove('flex');
-      document.getElementById('runnerIframe').srcdoc = '';
+      iframe.srcdoc = '';
+      state.currentRunnerTool = null;
+    }
+
+    function reloadRunner() {
+      if (!state.currentRunnerTool) return;
+      const iframe = document.getElementById('runnerIframe');
+      iframe.srcdoc = '';
+      setTimeout(() => {
+        if (state.currentRunnerTool) {
+          iframe.srcdoc = state.currentRunnerTool.html || '';
+        }
+      }, 40);
+    }
+
+    function toggleRunnerFullscreen() {
+      const dialog = document.getElementById('runnerDialog');
+      const btn = document.getElementById('btnFullscreen');
+      const isFull = dialog.classList.toggle('runner-fullscreen');
+      btn.textContent = isFull ? '🗗 退出全螢幕' : '⛶ 全螢幕';
+    }
+
+    function downloadCurrentTool() {
+      const tool = state.currentRunnerTool;
+      if (!tool || !tool.html) {
+        showToast('目前沒有可下載的程式碼', 'warning');
+        return;
+      }
+      const blob = new Blob([tool.html], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = tool.filename || 'sanmou-tool.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(`已開始下載 ${a.download}`, 'success');
     }
 
     // =========================================================================
-    // 8. 上傳 / 編輯器視窗 (Editor Modal) & 推送到 GitHub
+    // 8. 上傳 / 編輯器視窗 (Editor Modal)、Emoji 同步與自動偵測
     // =========================================================================
+    function syncEmojiWithCategory(category, showFlash = true) {
+      const emoji = CATEGORY_EMOJI_MAP[category] || '🛠️';
+      const iconInput = document.getElementById('inputIcon');
+      const badge = document.getElementById('emojiSyncBadge');
+      iconInput.value = emoji;
+      if (showFlash && badge) {
+        badge.textContent = `✨ 已同步 ${emoji}`;
+        iconInput.classList.add('border-amber-400', 'ring-1', 'ring-amber-400/50');
+        setTimeout(() => {
+          badge.textContent = '🔄 隨分類同步';
+          iconInput.classList.remove('border-amber-400', 'ring-1', 'ring-amber-400/50');
+        }, 1400);
+      }
+    }
+
+    function onCategoryChange() {
+      const cat = document.getElementById('inputCategory').value;
+      syncEmojiWithCategory(cat, true);
+    }
+
+    function detectCategoryFromText(text) {
+      const lower = (text || '').toLowerCase();
+      const rules = [
+        { cat: '攻城同盟', regex: /攻城|集結|同盟|打城|拆遷|發車|鋪路|考勤|公告|rally|siege/ },
+        { cat: '陣容配將', regex: /陣容|配將|兵種|克制|武將|戰法|紅度|隊伍|盾兵|弓兵|槍兵|騎兵|team|troop/ },
+        { cat: '開荒計算', regex: /計算|精鐵|體力|開荒|土地|經驗|屯田|倒數|計時|calc|stamina/ },
+        { cat: 'AI 輔助', regex: /\bai\b|提示詞|prompt|分析|復盤|戰報|gemini|chatgpt|大模型|生成/ },
+        { cat: '資源管理', regex: /資源|銅幣|糧草|木材|石料|鐵礦|稅收|抽卡|金銖|倉庫|resource/ },
+        { cat: '數據查詢', regex: /查詢|速查|圖鑑|數據|統計|排行|列表|表格|wiki|data|search/ }
+      ];
+      for (const rule of rules) {
+        if (rule.regex.test(lower)) return rule.cat;
+      }
+      return '其他工具';
+    }
+
+    // 使用 DOMParser 解析 HTML，自動提取工具名稱、簡介、分類並同步 Logo Emoji
+    function autoDetectMetadata(forceOverwrite = false, uploadedFilename = '') {
+      const html = document.getElementById('inputCode').value.trim();
+      const nameInput = document.getElementById('inputToolName');
+      const descInput = document.getElementById('inputDescription');
+      const catSelect = document.getElementById('inputCategory');
+      const fileInput = document.getElementById('inputFileName');
+      const commitInput = document.getElementById('inputCommitMsg');
+
+      if (!html) {
+        if (forceOverwrite) showToast('請先上傳檔案或貼上 HTML 程式碼再執行自動偵測', 'warning');
+        return;
+      }
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      // 1. 提取工具名稱（優先順序：<title> -> h1/h2 -> 檔名）
+      const rawTitle = (doc.querySelector('title')?.textContent || '').trim();
+      const cleanTitle = rawTitle
+        .replace(/\s*[|｜\-–—]\s*(流星街專用|三謀\s*AI\s*小工具管理平台|飛羽舞霜).*$/i, '')
+        .trim();
+      const headingEl = doc.querySelector('h1, h2');
+      const headingText = (headingEl?.textContent || '')
+        .replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F\s]+/u, '')
+        .trim();
+      const currentFile = uploadedFilename || fileInput.value.trim();
+      const filenameTitle = currentFile
+        ? currentFile.replace(/\.html?$/i, '').replace(/[-_]+/g, ' ').trim()
+        : '';
+
+      const detectedName = cleanTitle || headingText || filenameTitle || '三謀戰術小工具';
+
+      // 2. 偵測分類並同步 Logo Emoji
+      const bodySample = (doc.body?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 600);
+      const detectedCat = detectCategoryFromText(`${detectedName} ${currentFile} ${bodySample}`);
+
+      // 3. 提取工具簡介（優先順序：meta description -> 首個有意義的 p/副標題 -> 智慧摘要）
+      const metaDesc = (doc.querySelector('meta[name="description"]')?.getAttribute('content') || '').trim();
+      let paragraphDesc = '';
+      if (!metaDesc) {
+        const candidates = doc.querySelectorAll('header p, main p, body p, .subtitle, [class*="desc"]');
+        for (const el of candidates) {
+          const txt = (el.textContent || '').replace(/\s+/g, ' ').trim();
+          if (txt.length >= 10 && txt !== detectedName && !/^(流星街專用|作者[:：])/.test(txt)) {
+            paragraphDesc = txt.length > 76 ? txt.slice(0, 75) + '…' : txt;
+            break;
+          }
+        }
+      }
+
+      // 若無現成簡介，根據偵測到的 UI 元素智慧生成
+      let smartDesc = '';
+      if (!metaDesc && !paragraphDesc) {
+        const features = [];
+        if (doc.querySelector('input[type="number"], input[type="range"]')) features.push('數值計算');
+        if (doc.querySelector('table')) features.push('表格速查');
+        if (doc.querySelector('textarea') || /copy|複製/i.test(html)) features.push('文案生成與複製');
+        if (doc.querySelector('form, select, input[type="text"]')) features.push('表單互動');
+        const featureText = features.length > 0 ? features.slice(0, 2).join('與') : '快速互動操作';
+        smartDesc = `流星街專用【${detectedName}】，提供${featureText}及${detectedCat}戰術輔助功能。`;
+      }
+      const detectedDesc = metaDesc || paragraphDesc || smartDesc;
+
+      // 4. 填入表單（forceOverwrite 或欄位為空時自動寫入）
+      let updated = false;
+      if (forceOverwrite || !nameInput.value.trim()) {
+        nameInput.value = detectedName;
+        updated = true;
+      }
+      if (forceOverwrite || !descInput.value.trim()) {
+        descInput.value = detectedDesc;
+        updated = true;
+      }
+      if (forceOverwrite || !document.getElementById('editToolId').value) {
+        catSelect.value = detectedCat;
+        syncEmojiWithCategory(detectedCat, true);
+        updated = true;
+      }
+      if (!fileInput.value.trim() && detectedName) {
+        const safeSlug = detectedName.replace(/[\\/:*?"<>|\s]+/g, '-').slice(0, 32);
+        fileInput.value = `${safeSlug}.html`;
+      }
+      if (!document.getElementById('editToolId').value && detectedName) {
+        commitInput.value = `feat: 新增 ${detectedName}`;
+      }
+
+      if (updated) {
+        showToast(`✨ 已自動偵測：${detectedName}（${CATEGORY_EMOJI_MAP[detectedCat]} ${detectedCat}）`, 'success');
+      }
+    }
+
     function openEditorModal(tool = null) {
       const modal = document.getElementById('editorModal');
+      const normalizedCat = tool ? normalizeCategory(tool.category) : '攻城同盟';
       document.getElementById('editorModalTitle').textContent = tool ? `編輯 / 更新工具：${tool.name}` : '上傳 / 新增三謀小工具';
 
       document.getElementById('editToolId').value = tool ? tool.id : '';
       document.getElementById('editToolSource').value = tool ? tool.source : '';
       document.getElementById('inputToolName').value = tool ? tool.name : '';
       document.getElementById('inputFileName').value = tool ? tool.filename : '';
-      document.getElementById('inputCategory').value = tool ? tool.category : '開荒計算';
+      document.getElementById('inputCategory').value = normalizedCat;
       document.getElementById('inputVersion').value = tool ? tool.version : 'v1.0';
-      document.getElementById('inputIcon').value = tool ? (tool.icon || '⚔️') : '⚔️';
+      document.getElementById('inputIcon').value = tool ? (tool.icon || CATEGORY_EMOJI_MAP[normalizedCat]) : CATEGORY_EMOJI_MAP[normalizedCat];
       document.getElementById('inputDescription').value = tool ? (tool.description || '') : '';
       document.getElementById('inputCommitMsg').value = tool ? `update: 更新 ${tool.name} (${tool.version || 'v1.0'})` : 'feat: 新增三謀小工具';
       document.getElementById('inputCode').value = tool ? (tool.html || '') : '';
@@ -1603,12 +1520,8 @@
         const content = e.target.result;
         document.getElementById('inputCode').value = content;
         document.getElementById('inputFileName').value = file.name;
-        if (!document.getElementById('inputToolName').value.trim()) {
-          // 嘗試從 <title> 擷取工具名稱
-          const match = content.match(/<title[^>]*>([^<]+)<\/title>/i);
-          document.getElementById('inputToolName').value = match ? match[1].trim() : file.name.replace(/\.html?$/i, '');
-        }
-        showToast(`已載入檔案：${file.name}`, 'success');
+        const isNewTool = !document.getElementById('editToolId').value;
+        autoDetectMetadata(isNewTool, file.name);
       };
       reader.readAsText(file, 'UTF-8');
     }
@@ -1856,6 +1769,17 @@
           closeSettingsModal();
           closeDeleteModal();
         }
+      });
+
+      // 貼上 HTML 程式碼時自動偵測名稱、簡介與分類 Emoji（僅在新增工具或欄位空白時觸發）
+      const codeTextarea = document.getElementById('inputCode');
+      codeTextarea.addEventListener('paste', () => {
+        setTimeout(() => {
+          const isNew = !document.getElementById('editToolId').value;
+          if (isNew && codeTextarea.value.includes('<')) {
+            autoDetectMetadata(false);
+          }
+        }, 60);
       });
     }
 
