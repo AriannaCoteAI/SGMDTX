@@ -2,8 +2,20 @@
   "platform": "三謀 AI 小工具管理平台",
   "alliance": "流星街專用",
   "author": "飛羽舞霜",
-  "updatedAt": "2026-11-22 00:21",
+  "updatedAt": "2026-11-22 08:48",
   "tools": [
+    {
+      "id": "gh-w4n.html",
+      "name": "W4 開荒攻略",
+      "filename": "w4n.html",
+      "category": "開荒計算",
+      "version": "v1.0",
+      "icon": "🎯",
+      "description": "",
+      "author": "飛羽舞霜",
+      "alliance": "流星街專用",
+      "updatedAt": "2026-11-22 08:48"
+    },
     {
       "id": "gh-ironcal.html",
       "name": "同盟精鐵與攻城排程計算機",
