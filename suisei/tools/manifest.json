@@ -1,9 +1,19 @@
 {
   "platform": "三謀 AI 小工具管理平台",
-  "alliance": "流星街專用",
+  "exclusive": "流星街專用",
   "author": "飛羽舞霜",
-  "updatedAt": "2026-11-25 07:22",
+  "updatedAt": "2026-11-25 07:25",
   "tools": [
+    {
+      "id": "gh-s7.html",
+      "name": "S7 配將資料庫",
+      "filename": "s7.html",
+      "category": "陣容配將",
+      "version": "v1.0",
+      "icon": "⚔️",
+      "description": "請嘗試調整關鍵字或清除篩選條件。",
+      "updatedAt": "2026-11-25 07:25"
+    },
     {
       "id": "gh-code_artifact-(6).html",
       "name": "同盟精鐵與攻城排程計算機",
