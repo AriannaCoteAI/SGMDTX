@@ -1,0 +1,2404 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>S7陳倉之圍配將資料庫 by 飛羽</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans TC"', '"PingFang TC"', '"Microsoft JhengHei"', 'sans-serif'],
+          },
+          colors: {
+            obsidian: {
+              950: '#090c10',
+              900: '#0d1117',
+              800: '#161b22',
+              700: '#1f2633',
+              600: '#2d3748',
+            },
+            imperial: {
+              400: '#f3d27a',
+              500: '#d4af37',
+              600: '#b38f24',
+            },
+            crimson: {
+              400: '#f06565',
+              500: '#dc4c4c',
+              600: '#b83232',
+            },
+            jade: {
+              400: '#4cc38a',
+              500: '#34a86e',
+              600: '#258555',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    /* 自訂捲軸與微動畫 */
+    body {
+      background-color: #0d1117;
+      color: #e6edf3;
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background-image:
+        radial-gradient(circle at 15% 0%, rgba(212, 175, 55, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 10%, rgba(220, 76, 76, 0.06) 0%, transparent 35%);
+      background-attachment: fixed;
+    }
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0d1117;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2d3748;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #d4af37;
+    }
+    .tier-glow-t03 {
+      box-shadow: 0 0 14px rgba(212, 175, 55, 0.35), inset 0 0 8px rgba(220, 76, 76, 0.25);
+    }
+    .card-hover {
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card-hover:hover {
+      transform: translateY(-2px);
+      border-color: rgba(212, 175, 55, 0.5);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(212, 175, 55, 0.08);
+    }
+    .bar-fill {
+      transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.25s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-imperial-500/30 selection:text-imperial-400">
+
+  <!-- 頂部導覽與標題列 -->
+  <header class="sticky top-0 z-40 bg-obsidian-900/90 backdrop-blur-md border-b border-imperial-500/20 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-3">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <!-- 品牌標題區 -->
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-imperial-500/25 via-obsidian-800 to-crimson-500/20 border border-imperial-500/50 flex items-center justify-center shrink-0 shadow-inner">
+            <!-- 戰術印璽 SVG -->
+            <svg class="w-6 h-6 text-imperial-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L3 7v6c0 5.25 3.84 10.17 9 11 5.16-.83 9-5.75 9-11V7l-9-5z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v10M8 11h8"/>
+            </svg>
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h1 class="text-lg sm:text-xl md:text-2xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-imperial-400 via-yellow-200 to-imperial-500">
+                《三國：謀定天下》S7（陳倉之圍）配將資料庫
+              </h1>
+            </div>
+            <!-- 快速 KPI 標籤 -->
+            <div class="flex flex-wrap items-center gap-2 mt-1 text-xs sm:text-sm text-slate-400">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-obsidian-800 border border-slate-700/80 text-imperial-400 font-medium">
+                33 隊陣容
+              </span>
+              <span class="text-slate-600">｜</span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-obsidian-800 border border-slate-700/80 text-jade-400 font-medium">
+                18 多表共識
+              </span>
+              <span class="text-slate-600">｜</span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-obsidian-800 border border-slate-700/80 text-sky-400 font-medium">
+                5 大攻略來源
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 主導覽分頁按鈕 -->
+        <nav class="grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5 sm:gap-2 bg-obsidian-800/80 p-1.5 rounded-xl border border-slate-700/60" aria-label="主導覽">
+          <button onclick="switchTab('explorer')" id="tab-btn-explorer" class="nav-tab-btn px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5">
+            <span>📜</span><span>陣容圖鑑</span>
+          </button>
+          <button onclick="switchTab('coexist')" id="tab-btn-coexist" class="nav-tab-btn px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5">
+            <span>⚔️</span><span>共存模擬器</span>
+            <span id="coexist-badge" class="ml-0.5 px-1.5 py-0.2 rounded-full text-[11px] bg-imperial-500/20 text-imperial-400 border border-imperial-500/40">0/6</span>
+          </button>
+          <button onclick="switchTab('counter')" id="tab-btn-counter" class="nav-tab-btn px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5">
+            <span>🎯</span><span>克制查詢</span>
+          </button>
+          <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="nav-tab-btn px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5">
+            <span>📊</span><span>統計總覽</span>
+          </button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主要內容區 -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ==================== TAB 1: 陣容圖鑑 ==================== -->
+    <section id="view-explorer" class="tab-view animate-fade-in space-y-5">
+      <!-- 搜尋與篩選控制面板 -->
+      <div class="bg-obsidian-800/90 border border-slate-700/70 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
+        <!-- 搜尋列與重設按鈕 -->
+        <div class="flex flex-col sm:flex-row gap-3">
+          <div class="relative flex-1">
+            <svg class="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              id="search-input"
+              type="text"
+              placeholder="搜尋陣容名稱、武將（如：SP周瑜、郝昭）、戰法（如：折衝禦侮）、陣型、幕僚、優劣勢或備註..."
+              class="w-full pl-11 pr-10 py-2.5 bg-obsidian-900 border border-slate-700 focus:border-imperial-500 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-imperial-500/20 transition"
+              oninput="handleFilterChange()"
+            />
+            <button id="clear-search-btn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-1" title="清除搜尋">
+              ✕
+            </button>
+          </div>
+          <button onclick="resetAllFilters()" class="px-4 py-2.5 rounded-xl bg-obsidian-700 hover:bg-obsidian-600 text-slate-200 text-sm font-medium border border-slate-600/70 transition shrink-0">
+            重設全部篩選
+          </button>
+        </div>
+
+        <!-- 梯隊膠囊按鈕 -->
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs font-semibold text-slate-400 mr-1">強度梯隊：</span>
+          <div id="tier-pills" class="flex flex-wrap gap-1.5">
+            <!-- JS 動態生成 -->
+          </div>
+        </div>
+
+        <!-- 下拉選單與共識切換 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1 border-t border-slate-700/50">
+          <!-- 陣型篩選 -->
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">陣型篩選</label>
+            <select id="filter-formation" onchange="handleFilterChange()" class="w-full bg-obsidian-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-imperial-500">
+              <option value="ALL">全部陣型</option>
+            </select>
+          </div>
+          <!-- 來源篩選 -->
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">攻略來源</label>
+            <select id="filter-source" onchange="handleFilterChange()" class="w-full bg-obsidian-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-imperial-500">
+              <option value="ALL">全部來源</option>
+              <option value="slgguxi">slgguxi</option>
+              <option value="貂蟬">貂蟬</option>
+              <option value="小仔哥">小仔哥</option>
+              <option value="JX">JX</option>
+              <option value="阿桂">阿桂</option>
+            </select>
+          </div>
+          <!-- 共識篩選 -->
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">共識篩選</label>
+            <div class="grid grid-cols-3 bg-obsidian-900 border border-slate-700 rounded-xl p-1 text-xs">
+              <button onclick="setConsensusFilter('ALL')" id="cons-btn-ALL" class="cons-btn py-1.5 rounded-lg font-medium transition">全部</button>
+              <button onclick="setConsensusFilter('MULTI')" id="cons-btn-MULTI" class="cons-btn py-1.5 rounded-lg font-medium transition">多表共識</button>
+              <button onclick="setConsensusFilter('SINGLE')" id="cons-btn-SINGLE" class="cons-btn py-1.5 rounded-lg font-medium transition">單表獨有</button>
+            </div>
+          </div>
+          <!-- 排序方式 -->
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">排序方式</label>
+            <select id="sort-by" onchange="handleFilterChange()" class="w-full bg-obsidian-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-imperial-500">
+              <option value="tier">強度排序（高 → 低）</option>
+              <option value="consensus">共識度排序（多 → 少）</option>
+              <option value="formation">陣型排序</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 篩選結果計數條 -->
+      <div class="flex items-center justify-between text-sm text-slate-400 px-1">
+        <div>
+          顯示 <span id="result-count" class="text-imperial-400 font-bold">33</span> / 33 隊陣容
+          <span id="active-filter-hint" class="ml-2 text-xs text-slate-500"></span>
+        </div>
+        <div class="text-xs text-slate-500 hidden sm:block">點擊卡片「查看詳情」檢視站位圖、加點、韜略與裝備特技</div>
+      </div>
+
+      <!-- 陣容卡片網格 -->
+      <div id="team-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <!-- JS 動態渲染 -->
+      </div>
+
+      <!-- 無結果空狀態 -->
+      <div id="empty-state" class="hidden bg-obsidian-800/60 border border-slate-700/60 rounded-2xl p-12 text-center space-y-3">
+        <div class="text-4xl">🔍</div>
+        <h3 class="text-lg font-semibold text-slate-200">找不到符合條件的陣容</h3>
+        <p class="text-sm text-slate-400">請嘗試調整關鍵字或清除篩選條件。</p>
+        <button onclick="resetAllFilters()" class="mt-2 px-4 py-2 rounded-xl bg-imperial-500 hover:bg-imperial-400 text-obsidian-950 font-semibold text-sm transition">
+          顯示全部 33 隊陣容
+        </button>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: 共存模擬器 ==================== -->
+    <section id="view-coexist" class="tab-view hidden animate-fade-in space-y-5">
+      <!-- 控制與快速載入面板 -->
+      <div class="bg-obsidian-800/90 border border-slate-700/70 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-imperial-400 flex items-center gap-2">
+              <span>⚔️</span> 多隊共存與衝突檢測引擎（最多 6 隊）
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-400 mt-1">
+              即時偵測多隊間的「武將重複」與「戰法衝突」，自動區分無替代方案的<span class="text-crimson-400 font-semibold">嚴格衝突</span>與可透過「/」替換的<span class="text-amber-400 font-semibold">可調衝突</span>。
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="loadPreset('hot4')" class="px-3 py-2 rounded-xl bg-imperial-500/15 hover:bg-imperial-500/25 border border-imperial-500/40 text-imperial-400 text-xs sm:text-sm font-semibold transition">
+              ⚡ 一鍵載入熱門四隊
+            </button>
+            <button onclick="loadPreset('cup4')" class="px-3 py-2 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-sky-300 text-xs sm:text-sm font-semibold transition">
+              🏆 杯賽無衝突四隊
+            </button>
+            <button onclick="clearCoexist()" class="px-3 py-2 rounded-xl bg-crimson-500/15 hover:bg-crimson-500/25 border border-crimson-500/40 text-crimson-400 text-xs sm:text-sm font-semibold transition">
+              🗑️ 清空全部
+            </button>
+          </div>
+        </div>
+
+        <!-- 快速加入下拉選單 -->
+        <div class="flex flex-col sm:flex-row gap-2.5 pt-3 border-t border-slate-700/50">
+          <select id="coexist-quick-add" class="flex-1 bg-obsidian-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-imperial-500">
+            <option value="">-- 選擇要加入共存清單的陣容 --</option>
+          </select>
+          <button onclick="quickAddCoexist()" class="px-5 py-2.5 rounded-xl bg-imperial-500 hover:bg-imperial-400 text-obsidian-950 font-bold text-sm transition shrink-0">
+            ＋ 加入共存陣容
+          </button>
+        </div>
+      </div>
+
+      <!-- 衝突檢測總覽橫幅 -->
+      <div id="conflict-report" class="space-y-4">
+        <!-- JS 動態渲染 -->
+      </div>
+
+      <!-- 已選共存隊伍格位 (最多 6 隊) -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between px-1">
+          <h3 class="text-sm font-bold text-slate-300">目前編隊清單（<span id="coexist-count-text" class="text-imperial-400">0</span> / 6 隊）</h3>
+          <span class="text-xs text-slate-500">也可在「陣容圖鑑」卡片上直接加入或移除</span>
+        </div>
+        <div id="coexist-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <!-- JS 動態渲染 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: 克制查詢 ==================== -->
+    <section id="view-counter" class="tab-view hidden animate-fade-in space-y-5">
+      <div class="bg-obsidian-800/90 border border-slate-700/70 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
+        <div>
+          <h2 class="text-lg font-bold text-imperial-400 flex items-center gap-2">
+            <span>🎯</span> S7 戰場克制關係查詢
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">
+            點選熱門 S7 主流體系或輸入自訂關鍵字，即時對照哪些陣容「優勢克制」或「劣勢怕打」該目標。
+          </p>
+        </div>
+
+        <!-- 熱門目標快速點選 -->
+        <div class="space-y-2">
+          <div class="text-xs font-semibold text-slate-400">熱門 S7 主流目標：</div>
+          <div id="counter-presets" class="flex flex-wrap gap-2">
+            <!-- JS 動態生成 -->
+          </div>
+        </div>
+
+        <!-- 自訂關鍵字輸入 -->
+        <div class="flex flex-col sm:flex-row gap-2.5 pt-2 border-t border-slate-700/50">
+          <div class="relative flex-1">
+            <input
+              id="counter-input"
+              type="text"
+              placeholder="輸入目標關鍵字（例如：赤壁弓、孫堅、馬雲祿、薪火、法師、兵刃...）"
+              class="w-full px-4 py-2.5 bg-obsidian-900 border border-slate-700 focus:border-imperial-500 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-imperial-500/20"
+              oninput="handleCounterInput()"
+            />
+          </div>
+          <button onclick="clearCounterSearch()" class="px-4 py-2.5 rounded-xl bg-obsidian-700 hover:bg-obsidian-600 text-slate-200 text-sm font-medium border border-slate-600/70 transition shrink-0">
+            清除目標
+          </button>
+        </div>
+      </div>
+
+      <!-- 雙欄對照結果 -->
+      <div id="counter-results" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <!-- 左欄：優勢克制 -->
+        <div class="bg-obsidian-800/80 border border-jade-500/30 rounded-2xl p-4 sm:p-5 space-y-3">
+          <div class="flex items-center justify-between border-b border-jade-500/20 pb-3">
+            <h3 class="font-bold text-jade-400 flex items-center gap-2 text-base">
+              <span class="w-2.5 h-2.5 rounded-full bg-jade-400"></span>
+              優勢克制該目標的陣容
+            </h3>
+            <span id="counter-adv-count" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-jade-500/15 text-jade-400 border border-jade-500/30">0 隊</span>
+          </div>
+          <div id="counter-adv-list" class="space-y-3">
+            <!-- JS 渲染 -->
+          </div>
+        </div>
+
+        <!-- 右欄：劣勢怕打 -->
+        <div class="bg-obsidian-800/80 border border-crimson-500/30 rounded-2xl p-4 sm:p-5 space-y-3">
+          <div class="flex items-center justify-between border-b border-crimson-500/20 pb-3">
+            <h3 class="font-bold text-crimson-400 flex items-center gap-2 text-base">
+              <span class="w-2.5 h-2.5 rounded-full bg-crimson-400"></span>
+              劣勢怕打該目標的陣容
+            </h3>
+            <span id="counter-dis-count" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-crimson-500/15 text-crimson-400 border border-crimson-500/30">0 隊</span>
+          </div>
+          <div id="counter-dis-list" class="space-y-3">
+            <!-- JS 渲染 -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: 統計總覽 ==================== -->
+    <section id="view-analytics" class="tab-view hidden animate-fade-in space-y-6">
+      <!-- 4 張 KPI 數據卡 -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-obsidian-800/90 border border-imperial-500/30 rounded-2xl p-4 sm:p-5 shadow-lg">
+          <div class="text-xs text-slate-400 font-medium">收錄陣容總數</div>
+          <div class="text-3xl sm:text-4xl font-black text-imperial-400 mt-1" id="kpi-total">33</div>
+          <div class="text-[11px] text-slate-500 mt-1">S7 陳倉之圍全環境</div>
+        </div>
+        <div class="bg-obsidian-800/90 border border-jade-500/30 rounded-2xl p-4 sm:p-5 shadow-lg">
+          <div class="text-xs text-slate-400 font-medium">多表共識陣容數</div>
+          <div class="text-3xl sm:text-4xl font-black text-jade-400 mt-1" id="kpi-multi">18</div>
+          <div class="text-[11px] text-slate-500 mt-1">≥2 家攻略表共同推薦</div>
+        </div>
+        <div class="bg-obsidian-800/90 border border-amber-500/30 rounded-2xl p-4 sm:p-5 shadow-lg">
+          <div class="text-xs text-slate-400 font-medium">單表獨有陣容數</div>
+          <div class="text-3xl sm:text-4xl font-black text-amber-400 mt-1" id="kpi-single">15</div>
+          <div class="text-[11px] text-slate-500 mt-1">特化變種 / 單表推薦</div>
+        </div>
+        <div class="bg-obsidian-800/90 border border-sky-500/30 rounded-2xl p-4 sm:p-5 shadow-lg">
+          <div class="text-xs text-slate-400 font-medium">涵蓋資料來源數</div>
+          <div class="text-3xl sm:text-4xl font-black text-sky-400 mt-1" id="kpi-sources">5</div>
+          <div class="text-[11px] text-slate-500 mt-1">slgguxi / 貂蟬 / 小仔哥 / JX / 阿桂</div>
+        </div>
+      </div>
+
+      <!-- 互動圖表區 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <!-- 陣型分佈 -->
+        <div class="bg-obsidian-800/90 border border-slate-700/70 rounded-2xl p-5 shadow-xl space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-slate-100">陣型分佈統計</h3>
+            <span class="text-xs text-imperial-400">點擊長條圖篩選圖鑑 →</span>
+          </div>
+          <div id="chart-formation" class="space-y-2.5"></div>
+        </div>
+
+        <!-- 強度梯隊分佈 -->
+        <div class="bg-obsidian-800/90 border border-slate-700/70 rounded-2xl p-5 shadow-xl space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-slate-100">強度梯隊分佈</h3>
+            <span class="text-xs text-imperial-400">點擊長條圖篩選圖鑑 →</span>
+          </div>
+          <div id="chart-tier" class="space-y-2.5"></div>
+        </div>
+
+        <!-- 各資料來源收錄陣容數 -->
+        <div class="bg-obsidian-800/90 border border-slate-700/70 rounded-2xl p-5 shadow-xl space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-slate-100">各資料來源收錄陣容數</h3>
+            <span class="text-xs text-imperial-400">點擊長條圖篩選圖鑑 →</span>
+          </div>
+          <div id="chart-source" class="space-y-3"></div>
+        </div>
+
+        <!-- 高頻通用戰法 TOP 18 -->
+        <div class="bg-obsidian-800/90 border border-slate-700/70 rounded-2xl p-5 shadow-xl space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-slate-100">高頻通用戰法 TOP 18</h3>
+            <span class="text-xs text-imperial-400">點擊戰法查詢所有搭配隊伍 →</span>
+          </div>
+          <div id="chart-skills" class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-2.5"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 頁尾 -->
+  <footer class="border-t border-slate-800/80 bg-obsidian-950/60 py-5 mt-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+      <div>《三國：謀定天下》S7（陳倉之圍）配將資料庫 · 整合 5 大攻略來源共 33 隊實戰陣容</div>
+      <div>作者：飛羽舞霜</div>
+    </div>
+  </footer>
+
+  <!-- ==================== 陣容詳情彈窗 (Modal) ==================== -->
+  <div id="detail-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-sm" onclick="handleModalBackdrop(event)">
+    <div class="bg-obsidian-900 border border-imperial-500/40 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
+      <!-- Modal 頂部列 -->
+      <div id="modal-header" class="px-5 py-4 bg-obsidian-800 border-b border-slate-700/80 flex items-start justify-between gap-4 shrink-0">
+        <!-- JS 動態填入 -->
+      </div>
+      <!-- Modal 捲動內容 -->
+      <div id="modal-body" class="p-5 overflow-y-auto space-y-5 text-sm">
+        <!-- JS 動態填入 -->
+      </div>
+      <!-- Modal 底部操作列 -->
+      <div id="modal-footer" class="px-5 py-3.5 bg-obsidian-800 border-t border-slate-700/80 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <!-- JS 動態填入 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast 訊息提示框 (取代 alert) -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-[60] flex flex-col gap-2 pointer-events-none"></div>
+
+  <script>
+    // =========================================================================
+    // 1. 核心資料庫：完整 33 筆 S7 配將資料（嚴格保留原始欄位與文字）
+    // =========================================================================
+    const TEAMS_DATA = [
+      {
+        "season": "S7",
+        "tier": "T0.3",
+        "name": "赤壁弓（常規版）",
+        "formation": "偃月陣",
+        "wujiang1": "SP周瑜",
+        "wujiang2": "諸葛瑾",
+        "wujiang3": "諸葛亮",
+        "zhanfa1": "勝敵益強+明其虛實/懲前毖後",
+        "zhanfa2": "折衝禦侮+睿慮合圖",
+        "zhanfa3": "踐墨隨敵+蹈鋒飲血/機變無窮",
+        "advantage": "完剋薪火、南蠻、老周瑜、魏延及各類追擊快攻；高紅度壓制下多穿上限極高",
+        "disadvantage": "極度吃紅度（建議三將≥2紅，老諸葛紅度低易暴斃）；紅度不夠會被丕馬、孫陸陸、憋尿弓、趙雲、孫小陸剋制",
+        "troop_type": "槍弓弓",
+        "positioning": "前排：SP周瑜、諸葛亮｜後排：諸葛瑾",
+        "stat_alloc": "SP周瑜：全智（統率第二）｜諸葛瑾：全智（三智三統／一統或三統視孫堅環境調統，可補少量先攻）｜諸葛亮：全智（統率第一或調三統避鎖頭）",
+        "taolue": "SP周瑜：勢連（金書）、奪計、時利｜諸葛瑾：明哲（金書）、偵視、先勇/敵謀/合謀｜諸葛亮：隆中對、氣臨、時利/奪計",
+        "equipment": "智統/智先｜智統/智先｜智統/智先",
+        "official_post": "驍騎援衛（任意武將）",
+        "notes": "明其虛實多穿上限高但看發動，懲前毖後更穩定；蹈鋒飲血清雜強，面對郝昭抵禦隊可用機變無窮破抵禦；老諸葛一旦陣亡SP周瑜幾乎零傷害。",
+        "source": "JX + slgguxi + 貂蟬 + 阿桂"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.3",
+        "name": "赤壁弓（行軍摧堅版）",
+        "formation": "偃月陣",
+        "wujiang1": "SP周瑜",
+        "wujiang2": "諸葛瑾",
+        "wujiang3": "諸葛亮",
+        "zhanfa1": "勝敵益強+摧堅克難",
+        "zhanfa2": "折衝禦侮+睿慮合圖",
+        "zhanfa3": "踐墨隨敵+蹈鋒飲血/機變無窮",
+        "advantage": "優所有快攻；高滿紅紅壓下表現極強，輸出更穩定",
+        "disadvantage": "劣趙雲、薪火、憋尿弓；不調統劣孫堅；吃紅度極高",
+        "troop_type": "槍弓弓",
+        "positioning": "前排：SP周瑜、諸葛亮｜後排：諸葛瑾",
+        "stat_alloc": "SP周瑜：全智（統率第二）｜諸葛瑾：一統全智（或依孫堅環境調統）｜諸葛亮：三統全智（或一統全智）",
+        "taolue": "SP周瑜：勢連（金書）、虎翼/奪計、時利｜諸葛瑾：明哲（金書）、偵視、先勇/合謀｜諸葛亮：隆中對、守土/奪計、氣臨",
+        "equipment": "智統/智先｜智統｜智統",
+        "official_post": "行軍司馬（SP周瑜）",
+        "notes": "搭配行軍司馬幕僚走摧堅克難體系，穩定度高於明其版；老諸葛紅度依然是生存核心。",
+        "source": "slgguxi + 貂蟬 + 小仔哥"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.5",
+        "name": "皇馬盾",
+        "formation": "雁形陣",
+        "wujiang1": "司馬懿",
+        "wujiang2": "郝昭",
+        "wujiang3": "皇甫嵩",
+        "zhanfa1": "未雨綢繆+潛龍在淵/拔刀相向",
+        "zhanfa2": "步步為營+金城湯池",
+        "zhanfa3": "巋然不動+固若金湯/百戰不殆/忘私相助",
+        "advantage": "大優各類兵刃體系、諸葛蠻、孫陸陸、魏延等中慢速陣容；抗赤壁弓主力（帶忘私相助小優周瑜）",
+        "disadvantage": "大劣郝昭薪火、馬雲祿、孫堅；怕高滿紅百爆周瑜；內戰劣勢曹丕版（丕馬盾）",
+        "troop_type": "盾盾盾",
+        "positioning": "前排：郝昭、皇甫嵩｜後排：司馬懿",
+        "stat_alloc": "司馬懿：全智（二統全智）｜郝昭：全統（打陸遜、魏延需卷先攻）｜皇甫嵩：一速全統（一統全統）",
+        "taolue": "司馬懿：大略（金書）、奪計/機動、奇智/勵心｜郝昭：墨翟天工（金書）、兵令、大破/合謀｜皇甫嵩：漢將之略（金書）、兵令/勤先、合謀/大破/援道",
+        "equipment": "智統｜統先/智統｜智統/武統",
+        "official_post": "鎮嶽戍衛（三盾兵，司馬懿或任意武將）",
+        "notes": "皇甫嵩與郝昭≥2紅產生質變，滿紅成型強度達T0.5；對陣兵刃系能力全面加強。",
+        "source": "JX + slgguxi + 貂蟬 + 阿桂 + 小仔哥"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.5",
+        "name": "丕馬盾",
+        "formation": "雁形陣",
+        "wujiang1": "司馬懿",
+        "wujiang2": "郝昭",
+        "wujiang3": "曹丕",
+        "zhanfa1": "未雨綢繆+拔刀相向/潛龍在淵",
+        "zhanfa2": "金城湯池+步步為營/巋然不動",
+        "zhanfa3": "折衝禦侮+踐墨隨敵/巋然不動",
+        "advantage": "針對各類法師體系；小優赤壁弓且內戰優勢皇馬盾；平陸遜",
+        "disadvantage": "比皇馬盾更吃紅度；劣馬雲祿等高爆發兵刃隊",
+        "troop_type": "盾盾弓",
+        "positioning": "前排：郝昭、曹丕｜後排：司馬懿",
+        "stat_alloc": "司馬懿：全智｜郝昭：全統｜曹丕：全統",
+        "taolue": "司馬懿：大略（金書）、奪計/機動、奇智｜郝昭：墨翟天工（金書）、兵令、大破/合謀｜曹丕：天子/漢將之略（金書）、兵令、大破/合謀",
+        "equipment": "智統｜統先｜智統",
+        "official_post": "鎮嶽戍衛（三盾兵，任意武將）",
+        "notes": "法系內戰特化版司馬盾，曹丕偷智減傷配合鎮嶽戍衛壓制法師。",
+        "source": "slgguxi + 阿桂"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.5",
+        "name": "郝昭薪火",
+        "formation": "雁形陣",
+        "wujiang1": "姜維",
+        "wujiang2": "郝昭",
+        "wujiang3": "SP諸葛亮",
+        "zhanfa1": "勝敵益強+懲前毖後",
+        "zhanfa2": "鑄甲銷戈+金城湯池",
+        "zhanfa3": "折衝禦侮/空城計+巋然不動/空城計",
+        "advantage": "大優皇馬盾、南蠻；均勢孫堅、周瑜；平民全紅度最強神隊",
+        "disadvantage": "劣赤壁弓、普通薪火、馬雲祿、木鹿蠻、諸葛飛延；神諸葛單後排通病怕孫堅",
+        "troop_type": "盾盾槍",
+        "positioning": "前排：郝昭、SP諸葛亮｜後排：姜維",
+        "stat_alloc": "姜維：全智｜郝昭：一速全統｜SP諸葛亮：全智",
+        "taolue": "姜維：蜀武興略、兼資、文武｜郝昭：墨翟天工（金書）、兵令、大破/先勇｜SP諸葛亮：八陣（金書）、兵令/敵勇、大破/先勇/合謀/氣臨",
+        "equipment": "智先/武智/智統｜統先/智統｜智統/智先",
+        "official_post": "鎮嶽戍衛（姜維）",
+        "notes": "SP諸葛亮在共存方案可改帶空城計+巋然不動節省折衝禦侮；性價比極高。",
+        "source": "JX + slgguxi + 貂蟬 + 小仔哥"
+      },
+      {
+        "season": "S7",
+        "tier": "T1",
+        "name": "一字老薪火",
+        "formation": "一字陣",
+        "wujiang1": "姜維",
+        "wujiang2": "劉備",
+        "wujiang3": "SP諸葛亮",
+        "zhanfa1": "勝敵益強+懲前毖後",
+        "zhanfa2": "恩威並行+同舟共濟",
+        "zhanfa3": "折衝禦侮/步步為營+調和陰陽",
+        "advantage": "三前排高治療續航，克制郝昭薪火等中慢速消耗隊",
+        "disadvantage": "怕高爆發速攻與赤壁弓",
+        "troop_type": "槍盾盾",
+        "positioning": "前排：姜維、劉備、SP諸葛亮（一字陣三前排）",
+        "stat_alloc": "姜維：全智（統率全隊最高）｜劉備：全智｜SP諸葛亮：全智",
+        "taolue": "姜維：蜀武興略、兼資、文武｜劉備：仁義論、兵令、援道｜SP諸葛亮：八陣、兵令、先勇",
+        "equipment": "智統｜智先｜智先",
+        "official_post": "懸壺醫者（劉備）",
+        "notes": "經典一字陣三前排奶量薪火體系，依靠劉備恩威並行與同舟共濟疊加治療輸出。",
+        "source": "slgguxi"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.3",
+        "name": "左田堅",
+        "formation": "箕形陣",
+        "wujiang1": "左慈",
+        "wujiang2": "田豐",
+        "wujiang3": "孫堅",
+        "zhanfa1": "折衝禦侮+踐墨隨敵/挫銳折鋒",
+        "zhanfa2": "運籌帷幄/戰八方+一計決勝/指點乾坤/捨生取義",
+        "zhanfa3": "拔刀相向+斬將奪旗/及鋒而試",
+        "advantage": "高滿紅理論泥頭車；對單後排單核隊伍（如馬妹、郝薪火）具壓制力",
+        "disadvantage": "怕控制（天災孫陸陸、沖水左堅寧、空城計）及踐墨隨敵；怕王雙",
+        "troop_type": "盾弓盾",
+        "positioning": "前排：左慈｜後排：田豐、孫堅",
+        "stat_alloc": "左慈：三統全智（統率最低挨刀）｜田豐：二統全先攻｜孫堅：一統全武（速度低於田豐60點）",
+        "taolue": "左慈：九鼎丹經、兵令、敵勇/氣臨｜田豐：權略/直諫（金書）、兵令/先勇、勵心/機動｜孫堅：討逆全書（金書）、勵心/機動、鬼謀",
+        "equipment": "智先｜統先｜武統/武先",
+        "official_post": "鎮嶽戍衛（田豐）／因果道人／決勝佐使（田豐）",
+        "notes": "三盾變體可用鎮嶽戍衛；田豐帶捨生取義可緩解怕控問題；仙術體系核心隊之一。",
+        "source": "JX + slgguxi + 貂蟬 + 阿桂"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.3",
+        "name": "左堅寧",
+        "formation": "箕形陣",
+        "wujiang1": "左慈",
+        "wujiang2": "張寧",
+        "wujiang3": "孫堅",
+        "zhanfa1": "折衝禦侮+踐墨隨敵/挫銳折鋒",
+        "zhanfa2": "明其虛實+黃天惑心",
+        "zhanfa3": "沖銳巧變/拔刀相向+水淹七軍/斬將奪旗",
+        "advantage": "優周瑜、皇馬盾、左田堅；理論上與赤壁弓也有一戰之力",
+        "disadvantage": "大劣郝昭薪火、王雙及高頻控制隊；卷主動內戰不穩定",
+        "troop_type": "盾弓盾",
+        "positioning": "前排：左慈｜後排：張寧、孫堅",
+        "stat_alloc": "左慈：一智三統（全隊統率最低）｜張寧：全智（可點15速）｜孫堅：20–25速後全武（阿桂版可全先攻）",
+        "taolue": "左慈：九鼎丹經、敵勇/氣臨、兵令｜張寧：黃巾通義/志繼黃天（金書）、機動/奪計、勵心/時利｜孫堅：討逆全書（金書）、機動、勵心",
+        "equipment": "智先｜智統｜武先/武統",
+        "official_post": "驍騎援衛（任意武將）／因果道人",
+        "notes": "孫堅主流帶沖銳巧變+水淹七軍打控制與高爆發；slgguxi 另提供戰八方+指點乾坤替代方案；和孫陸陸共存時建議用沖銳水淹版。",
+        "source": "JX + slgguxi + 貂蟬 + 阿桂 + 小仔哥"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.5",
+        "name": "仙術堅（左于堅）",
+        "formation": "箕形陣",
+        "wujiang1": "左慈",
+        "wujiang2": "于吉",
+        "wujiang3": "孫堅",
+        "zhanfa1": "折衝禦侮+踐墨隨敵",
+        "zhanfa2": "明其虛實+一計決勝",
+        "zhanfa3": "沖銳巧變+水淹七軍",
+        "advantage": "優馬妹、郝昭薪火、孫堅內戰",
+        "disadvantage": "低紅大劣司馬懿；大劣魏延、王雙、趙雲",
+        "troop_type": "盾弓盾",
+        "positioning": "前排：左慈｜後排：于吉、孫堅",
+        "stat_alloc": "左慈：全智｜于吉：全速｜孫堅：一統略點速度後全武",
+        "taolue": "左慈：九鼎丹經、敵勇、兵令｜于吉：金書、機動、勵心｜孫堅：討逆全書（金書）、機動、勵心",
+        "equipment": "智統｜智先｜武統",
+        "official_post": "決勝佐使（于吉）",
+        "notes": "杯賽高滿四隊共存推薦配置；折衝禦侮可用影子戰法共存。",
+        "source": "小仔哥"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.5",
+        "name": "雁陸陸（拔刀版）",
+        "formation": "雁形陣",
+        "wujiang1": "陸遜",
+        "wujiang2": "陸抗",
+        "wujiang3": "孫權",
+        "zhanfa1": "明其虛實+拔刀相向",
+        "zhanfa2": "折衝禦侮+青囊急救/橫徵暴斂",
+        "zhanfa3": "禦敵臨前+烈火張天/風助火勢",
+        "advantage": "新數值怪，拳打孫堅腳踢馬妹，大優赤壁弓",
+        "disadvantage": "打司馬懿（皇馬/丕馬）必須帶烈火張天破抵禦，否則易被抵禦拖死",
+        "troop_type": "弓弓槍",
+        "positioning": "前排：陸抗、孫權｜後排：陸遜",
+        "stat_alloc": "陸遜：全智卷先攻｜陸抗：全智｜孫權：全先攻",
+        "taolue": "陸遜：焚糧/焚營（金書）、鬼謀、機動/勵心｜陸抗：諫伐晉疏（金書）、機動、大破｜孫權：東觀漢記、機動、勵心",
+        "equipment": "智統/智先｜智先｜智先",
+        "official_post": "因果道人",
+        "notes": "全紅度首發強推版本，兼具外戰上限與穩定性。",
+        "source": "阿桂"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.5",
+        "name": "雁陸陸（續航版）",
+        "formation": "雁形陣",
+        "wujiang1": "陸遜",
+        "wujiang2": "孫權",
+        "wujiang3": "陸抗",
+        "zhanfa1": "明其虛實+青囊急救",
+        "zhanfa2": "禦敵臨前+知人善任",
+        "zhanfa3": "橫徵暴斂/折衝禦侮+風助火勢",
+        "advantage": "優南蠻，小優不追速度魏延，均勢薪火、孫堅",
+        "disadvantage": "大劣周瑜、馬雲祿",
+        "troop_type": "弓槍弓",
+        "positioning": "前排：孫權、陸抗｜後排：陸遜",
+        "stat_alloc": "陸遜：一統全智｜孫權：二統全速｜陸抗：三統全智",
+        "taolue": "陸遜：焚營、鬼謀、料敵｜孫權：東觀漢記、合謀、勵心｜陸抗：諫伐晉疏（金書）、臨時、大破",
+        "equipment": "智統｜智先｜智先",
+        "official_post": "瘴癘道師／因果道人（孫權）",
+        "notes": "杯賽四隊共存常規配置，無需搶拔刀相向與折衝禦侮（陸抗可帶橫徵暴斂）。",
+        "source": "小仔哥"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.5",
+        "name": "箕陸陸（拔刀天災版）",
+        "formation": "箕形陣",
+        "wujiang1": "陸抗",
+        "wujiang2": "孫權",
+        "wujiang3": "陸遜",
+        "zhanfa1": "橫徵暴斂+折衝禦侮/青囊急救",
+        "zhanfa2": "風助火勢+巧利天災/一計決勝",
+        "zhanfa3": "明其虛實+拔刀相向",
+        "advantage": "專精主動隊內戰；舒適圈涵蓋司馬懿、姜維等中速隊伍，亦能碰赤壁弓",
+        "disadvantage": "天災版外戰能力大幅下降，主打內戰互卷",
+        "troop_type": "弓槍弓",
+        "positioning": "前排：陸抗｜後排：孫權、陸遜",
+        "stat_alloc": "陸抗：三統全智（全隊統率最低）｜孫權：全先攻（全隊統率第二）｜陸遜：全智卷先攻（全隊智力最高）",
+        "taolue": "陸抗：諫伐晉疏（金書）、合謀、兵令/氣臨｜孫權：東觀漢記、機動/受勢、勵心｜陸遜：焚營/焚糧（金書）、鬼謀、勵心/機動/奪計",
+        "equipment": "智統/智先｜先攻/統先/智先｜智統/智先",
+        "official_post": "因果道人／決勝佐使（孫權）",
+        "notes": "孫權帶1級巧利天災可防止誤傷過高同時觸發大量控制；JX版孫權帶一計決勝＋決勝佐使亦屬同體系。",
+        "source": "JX + slgguxi + 阿桂"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.5",
+        "name": "箕陸陸（主動內戰版）",
+        "formation": "箕形陣",
+        "wujiang1": "陸抗",
+        "wujiang2": "陸遜",
+        "wujiang3": "孫權",
+        "zhanfa1": "橫徵暴斂+青囊急救",
+        "zhanfa2": "一計決勝+韜光養晦",
+        "zhanfa3": "風助火勢+巧利天災",
+        "advantage": "優南蠻，小優不追速度魏延，均勢薪火、孫堅；專卷主動隊內戰",
+        "disadvantage": "大劣周瑜、馬雲祿",
+        "troop_type": "弓弓槍",
+        "positioning": "前排：陸抗｜後排：陸遜、孫權",
+        "stat_alloc": "陸抗：二速全智｜陸遜：一統全智｜孫權：全速",
+        "taolue": "陸抗：諫伐晉疏（金書）、機動、勵心｜陸遜：焚營、鬼謀、料敵｜孫權：東觀漢記、合謀、勵心",
+        "equipment": "智先｜智統｜智先",
+        "official_post": "決勝佐使（陸遜）",
+        "notes": "六隊共存不搶折衝禦侮與拔刀相向；孫權巧利天災保持1級。",
+        "source": "小仔哥"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.8",
+        "name": "箕陸陸（明其青囊版）",
+        "formation": "箕形陣",
+        "wujiang1": "陸抗",
+        "wujiang2": "孫權",
+        "wujiang3": "陸遜",
+        "zhanfa1": "橫徵暴斂+折衝禦侮",
+        "zhanfa2": "風助火勢+一計決勝/巧利天災",
+        "zhanfa3": "明其虛實+青囊急救",
+        "advantage": "戰場攪屎棍，具備高續航與主動壓制力",
+        "disadvantage": "爆發低於拔刀版",
+        "troop_type": "弓槍弓",
+        "positioning": "前排：陸抗｜後排：孫權、陸遜",
+        "stat_alloc": "陸抗：+20速其餘全智｜孫權：全速｜陸遜：統率別最低其餘全智",
+        "taolue": "陸抗：諫伐晉疏（金書）、合謀、兵令｜孫權：東觀漢記、機動、勵心｜陸遜：焚營、機動、勵心",
+        "equipment": "智先｜智先｜智先",
+        "official_post": "決勝佐使（孫權）",
+        "notes": "陸遜攜帶青囊急救強化續航與驅散，適合多穿。",
+        "source": "貂蟬"
+      },
+      {
+        "season": "S7",
+        "tier": "T1",
+        "name": "孫小陸",
+        "formation": "箕形陣",
+        "wujiang1": "孫權",
+        "wujiang2": "小喬",
+        "wujiang3": "陸遜",
+        "zhanfa1": "禦敵臨前+風助火勢",
+        "zhanfa2": "運籌帷幄+折衝禦侮/誘敵深入",
+        "zhanfa3": "明其虛實+拔刀相向",
+        "advantage": "比孫陸陸更優赤壁弓",
+        "disadvantage": "打擊面較窄",
+        "troop_type": "槍弓弓",
+        "positioning": "前排：小喬｜後排：孫權、陸遜（slgguxi為雙前排小喬孫權、單後排陸遜，按實際陣型調整）",
+        "stat_alloc": "孫權：全先攻｜小喬：全先攻｜陸遜：全智卷先攻",
+        "taolue": "孫權：東觀漢記、臨時/機動、勵心/機動｜小喬：天香/公瑾信（金書）、機動、勵心｜陸遜：焚營、鬼謀、勵心/機動",
+        "equipment": "統先/智先｜智統/智先｜智統/智先",
+        "official_post": "因果道人",
+        "notes": "針對赤壁弓的特化變種，小喬提供虛弱與減屬性。",
+        "source": "slgguxi + 阿桂"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.5",
+        "name": "百爆周瑜",
+        "formation": "箕形陣",
+        "wujiang1": "諸葛瑾",
+        "wujiang2": "周瑜",
+        "wujiang3": "荀彧",
+        "zhanfa1": "踐墨隨敵+蹈鋒飲血",
+        "zhanfa2": "勝敵益強+機變無窮",
+        "zhanfa3": "折衝禦侮+狂風大作",
+        "advantage": "大優魏延、木鹿蠻、脆皮主動隊，小優皇馬盾；快速出傷清雜極強",
+        "disadvantage": "大劣薪火、諸葛蠻，小劣孫堅、馬雲祿；怕SP諸葛亮各種隊伍；吃裝備特技不建議降配戰法",
+        "troop_type": "弓弓弓",
+        "positioning": "前排：諸葛瑾｜後排：周瑜、荀彧",
+        "stat_alloc": "諸葛瑾：全智｜周瑜：二統一智（全智一智）｜荀彧：三統全智",
+        "taolue": "諸葛瑾：明哲（金書）、氣臨、互勢｜周瑜：火計/奪計、時利、料敵/金書｜荀彧：金書、偵視、宣智/兵情",
+        "equipment": "智統/智先｜智統｜智統/智先",
+        "official_post": "瘴癘道師（周瑜）",
+        "notes": "對紅度與裝備要求高，適合杯賽四隊共存或清雜打戰功。",
+        "source": "JX + 小仔哥"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.5",
+        "name": "主動南蠻（木鹿蠻）",
+        "formation": "箕形陣",
+        "wujiang1": "孟獲",
+        "wujiang2": "祝融夫人",
+        "wujiang3": "木鹿大王",
+        "zhanfa1": "蹈鋒飲血+踐墨隨敵/步步為營/避其銳氣",
+        "zhanfa2": "勝敵益強+銳不可當",
+        "zhanfa3": "烈火張天+指點乾坤",
+        "advantage": "究極提速；優勢其他快攻、薪火、魏延、內戰",
+        "disadvantage": "劣勢周瑜、司馬懿、陸遜、追擊木鹿蠻；祝融需高紅",
+        "troop_type": "盾騎騎",
+        "positioning": "前排：孟獲｜後排：祝融夫人、木鹿大王",
+        "stat_alloc": "孟獲：全統｜祝融夫人：二統全武（進場後二統）｜木鹿大王：全速（全隊統率最低）",
+        "taolue": "孟獲：保南境書（金書）、先勇、敵勇｜祝融夫人：火裔絕刃（金書）、時利、久戰/得勢｜木鹿大王：巫醫古卷（金書）、機動、勵心",
+        "equipment": "智統｜武統/武先｜智先",
+        "official_post": "驍騎援衛（祝融夫人或任意武將）",
+        "notes": "祝融紅度高即可玩；六隊共存時孟獲可帶步步為營或避其銳氣，祝融可用影子戰法。",
+        "source": "slgguxi + 小仔哥"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.8",
+        "name": "追擊南蠻（追擊蠻）",
+        "formation": "方圓陣",
+        "wujiang1": "孟獲",
+        "wujiang2": "木鹿大王",
+        "wujiang3": "祝融夫人",
+        "zhanfa1": "披堅執銳+輕裝馳援",
+        "zhanfa2": "無難之志+禦敵臨前",
+        "zhanfa3": "銳不可當+橫掃千軍",
+        "advantage": "馬速極快，一般中速隊皆可打；打主動木鹿蠻佔優",
+        "disadvantage": "偶爾會演戲；理論上被赤壁弓克制，不好打周瑜",
+        "troop_type": "盾騎騎",
+        "positioning": "前排：孟獲、木鹿大王｜後排：祝融夫人",
+        "stat_alloc": "孟獲：全統｜木鹿大王：統率最低其餘全速｜祝融夫人：統率第二其餘全武",
+        "taolue": "孟獲：保南境書（金書）、先勇、敵勇｜木鹿大王：巫醫古卷（金書）、機動、勵心｜祝融夫人：火裔絕刃（金書）、時利、久戰",
+        "equipment": "統先｜智先｜武統",
+        "official_post": "追襲騎衛（孟獲）",
+        "notes": "高滿紅南蠻玩家常見共存方案，與主動南蠻完全不同體系。",
+        "source": "JX + 貂蟬"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.5+",
+        "name": "董蠻子",
+        "formation": "箕形陣",
+        "wujiang1": "孟獲",
+        "wujiang2": "董卓",
+        "wujiang3": "祝融夫人",
+        "zhanfa1": "踐墨隨敵+蹈鋒飲血",
+        "zhanfa2": "折衝禦侮/運籌帷幄+指點乾坤",
+        "zhanfa3": "勝敵益強+銳不可當",
+        "advantage": "祝融調統高過董卓時，理論上能打左田堅",
+        "disadvantage": "不好打赤壁弓；建議中高紅使用",
+        "troop_type": "盾盾騎",
+        "positioning": "前排：孟獲｜後排：董卓、祝融夫人",
+        "stat_alloc": "孟獲：全統｜董卓：全速｜祝融夫人：統率第二（需高過董卓）其餘全武",
+        "taolue": "孟獲：保南境書（金書）、先勇、敵勇｜董卓：王臣（金書）、機動、勵心｜祝融夫人：火裔絕刃（金書）、時利、久戰",
+        "equipment": "智統｜智先｜武統",
+        "official_post": "驍騎援衛（任意武將）",
+        "notes": "以董卓替代木鹿大王的南蠻主動變種，強化坦度與偷統能力。",
+        "source": "貂蟬"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.5",
+        "name": "諸馬馬（馬妹）",
+        "formation": "方圓陣",
+        "wujiang1": "SP諸葛亮",
+        "wujiang2": "馬騰",
+        "wujiang3": "馬雲祿",
+        "zhanfa1": "折衝禦侮+踐墨隨敵/空城計/披堅執銳",
+        "zhanfa2": "挫銳折鋒+捨生取義/踐墨隨敵",
+        "zhanfa3": "鐵騎橫衝+銳不可當",
+        "advantage": "大優雁形陣薪火、郝昭薪火，小優皇馬盾、陸遜、周瑜、左堅寧",
+        "disadvantage": "高滿紅限定（非高滿紅或高打低環境慎選）；大劣田豐孫堅、王雙、SP周瑜（赤壁弓）；小劣南蠻、漢盾",
+        "troop_type": "騎騎騎",
+        "positioning": "前排：SP諸葛亮、馬騰｜後排：馬雲祿（小仔哥亦推薦雁形陣）",
+        "stat_alloc": "SP諸葛亮：全智｜馬騰：全統｜馬雲祿：三統30速（約230速）後全武，可卷先攻",
+        "taolue": "SP諸葛亮：八陣（金書）、敵勇/氣臨/互勢、大破/先勇/備戰｜馬騰：鐵騎雄韜（金書）、先勇/敵勇、大破/氣臨/互勢/備戰｜馬雲祿：久戰/疾戰、疾鬥、突鬥/慢戰",
+        "equipment": "智統｜統先/智統｜武先/統先",
+        "official_post": "追襲騎衛（三騎兵，SP諸葛亮）",
+        "notes": "首發高紅爆發隊；小仔哥六隊共存方案可將折衝禦侮、銳不可當改用影子戰法，並可選方圓陣或雁形陣。",
+        "source": "JX + slgguxi + 貂蟬 + 阿桂 + 小仔哥"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.5",
+        "name": "樂馬雙（新王雙）",
+        "formation": "偃月陣",
+        "wujiang1": "樂進",
+        "wujiang2": "馬騰",
+        "wujiang3": "王雙",
+        "zhanfa1": "無難之志+戰八方/虎步連環",
+        "zhanfa2": "挫銳折鋒+捨生取義",
+        "zhanfa3": "銳不可當+橫掃千軍",
+        "advantage": "大優孫堅（專剋左堅寧）、兵刃隊；小優馬妹、南蠻、周瑜",
+        "disadvantage": "非常怕赤壁弓（定向鎖SP周瑜觸發諸葛分攤反傷）及法師隊；劣勢反擊體系、郝昭薪火、皇馬盾；追擊隊偶爾演戲",
+        "troop_type": "騎騎騎",
+        "positioning": "前排：樂進、王雙｜後排：馬騰",
+        "stat_alloc": "樂進：全速｜馬騰：全統｜王雙：二統15速（或智力第一）後全武",
+        "taolue": "樂進：同登（金書）/兵令、合謀/先勇、敵勇｜馬騰：鐵騎雄韜（金書）、先勇/備戰、兵令｜王雙：金書、疾鬥、突鬥",
+        "equipment": "武先/統先｜統帥/智統｜武先",
+        "official_post": "追襲騎衛（樂進）",
+        "notes": "半場克制特工隊，專抓各類孫堅體系。",
+        "source": "JX + 貂蟬 + 小仔哥"
+      },
+      {
+        "season": "S7",
+        "tier": "T1",
+        "name": "先登遼",
+        "formation": "偃月陣",
+        "wujiang1": "樂進",
+        "wujiang2": "馬騰",
+        "wujiang3": "張遼",
+        "zhanfa1": "戰八方+無難之志",
+        "zhanfa2": "挫銳折鋒+捨生取義",
+        "zhanfa3": "鐵騎橫衝+兵貴神速",
+        "advantage": "極速鎖頭爆發，克制脆皮法師與單核後排",
+        "disadvantage": "怕反擊體系、高抵禦盾隊與繳械控制",
+        "troop_type": "槍騎騎",
+        "positioning": "前排：樂進、張遼｜後排：馬騰",
+        "stat_alloc": "樂進：全先攻（全隊統率最低）｜馬騰：全統｜張遼：全武（全隊智力第一）",
+        "taolue": "樂進：同登、先勇、敵勇｜馬騰：鐵騎雄韜、備戰、合謀｜張遼：奇戰、疾鬥、突鬥",
+        "equipment": "智先｜智統｜武先",
+        "official_post": "追襲騎衛（樂進）",
+        "notes": "張遼高紅速攻替代王雙方案。",
+        "source": "slgguxi"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.5",
+        "name": "諸葛飛延（漢中盾）",
+        "formation": "箕形陣",
+        "wujiang1": "SP諸葛亮",
+        "wujiang2": "魏延",
+        "wujiang3": "張飛",
+        "zhanfa1": "踐墨隨敵+蹈鋒飲血",
+        "zhanfa2": "勝敵益強+銳不可當",
+        "zhanfa3": "戰八方+避其銳氣",
+        "advantage": "全紅度可用，能打孫堅體系與郝昭薪火",
+        "disadvantage": "怕赤壁弓、百爆周瑜、皇馬盾；適合魏延偏科高紅玩家",
+        "troop_type": "盾盾槍",
+        "positioning": "前排：SP諸葛亮｜後排：魏延、張飛",
+        "stat_alloc": "SP諸葛亮：全智｜魏延：統率第二其餘全武｜張飛：全速（或50先攻後武力）",
+        "taolue": "SP諸葛亮：八陣（金書）、先勇、先戰｜魏延：金書、久戰、時利｜張飛：金書、機動、勵心",
+        "equipment": "智統｜武統/智先｜統先/武先",
+        "official_post": "懾敵都統（張飛）",
+        "notes": "以SP諸葛亮配雙蜀漢猛將，張飛全速先手掛畏懼觸發魏延流血爆發。",
+        "source": "JX + 貂蟬"
+      },
+      {
+        "season": "S7",
+        "tier": "T1",
+        "name": "泰飛延",
+        "formation": "錐形陣",
+        "wujiang1": "周泰",
+        "wujiang2": "魏延",
+        "wujiang3": "張飛",
+        "zhanfa1": "橫徵暴斂+蹈鋒飲血",
+        "zhanfa2": "勝敵益強+銳不可當",
+        "zhanfa3": "戰八方+瞋目橫矛",
+        "advantage": "小優馬妹等高爆發單點隊伍",
+        "disadvantage": "怕赤壁弓、周瑜及高減傷盾隊",
+        "troop_type": "盾盾槍",
+        "positioning": "前排：魏延｜後排：周泰、張飛",
+        "stat_alloc": "周泰：全統｜魏延：全武（打郝昭需卷先攻）｜張飛：全先攻",
+        "taolue": "周泰：歷戰、先勇、氣臨｜魏延：槊血書、久戰、時利｜張飛：新亭侯刀銘、機動、勵心",
+        "equipment": "智統｜武先｜統先/武先",
+        "official_post": "懾敵都統（張飛）",
+        "notes": "不佔用SP諸葛亮的魏延共存版本，周泰分擔傷害保核。",
+        "source": "slgguxi"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.5+",
+        "name": "泰諸馬",
+        "formation": "雁形陣",
+        "wujiang1": "馬超",
+        "wujiang2": "周泰",
+        "wujiang3": "SP諸葛亮",
+        "zhanfa1": "勝敵益強+摧堅克難",
+        "zhanfa2": "橫徵暴斂+蹈鋒飲血",
+        "zhanfa3": "折衝禦侮+踐墨隨敵/指點乾坤",
+        "advantage": "高滿紅爆發極強，周泰保核對孫堅體系有一定抵抗力",
+        "disadvantage": "高滿紅限定；馬超怕田豐降屬",
+        "troop_type": "騎盾盾",
+        "positioning": "前排：周泰、SP諸葛亮｜後排：馬超",
+        "stat_alloc": "馬超：統率最低，適度卷先攻其餘全武（slgguxi圖誤印智力，實戰為主武）｜周泰：全統｜SP諸葛亮：全智",
+        "taolue": "馬超：鐵騎令（金書）、時利、勝戰｜周泰：歷戰（金書）、先勇、互勢/氣臨｜SP諸葛亮：八陣（金書）、互勢/敵勇、大破",
+        "equipment": "武先｜智統｜智統",
+        "official_post": "行軍司馬（馬超）",
+        "notes": "SP諸葛亮帶踐墨隨敵偏防禦反打，帶指點乾坤偏爆發輸出。",
+        "source": "slgguxi + 貂蟬"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.8+",
+        "name": "趙甘諸",
+        "formation": "魚鱗陣",
+        "wujiang1": "趙雲",
+        "wujiang2": "甘夫人",
+        "wujiang3": "SP諸葛亮",
+        "zhanfa1": "掠陣破軍+銳不可當/摧堅克難/潛龍在淵",
+        "zhanfa2": "調和陰陽+金城湯池/瞋目橫矛/輕裝馳援",
+        "zhanfa3": "折衝禦侮+瞋目橫矛/挫銳折鋒",
+        "advantage": "高規避反打，克制赤壁弓等高頻傷害隊伍",
+        "disadvantage": "吃紅度，靠紅度在戰場混戰；怕必中與高控隊",
+        "troop_type": "騎弓盾",
+        "positioning": "前排：趙雲｜後排：甘夫人、SP諸葛亮（slgguxi亦可用錐形陣，SP諸葛亮可換劉備）",
+        "stat_alloc": "趙雲：全武｜甘夫人：全智｜SP諸葛亮：全智",
+        "taolue": "趙雲：神勇（金書）、得勢/技藝、勝敏｜甘夫人：漢女傳（金書）、金鼓/敵勇、技藝｜SP諸葛亮：八陣（金書）、敵勇/兵教、先勇",
+        "equipment": "武統｜智先/智統｜智統",
+        "official_post": "越騎校尉（趙雲或任意武將）",
+        "notes": "經典規避趙雲體系，SP諸葛亮被佔用時可平替劉備（帶仁義論）。",
+        "source": "slgguxi + 貂蟬"
+      },
+      {
+        "season": "S7",
+        "tier": "T0.8",
+        "name": "趙甘姜",
+        "formation": "錐形陣",
+        "wujiang1": "姜維",
+        "wujiang2": "趙雲",
+        "wujiang3": "甘夫人",
+        "zhanfa1": "勝敵益強+洗筋伐髓/折衝禦侮",
+        "zhanfa2": "掠陣破軍/勇冠三軍+銳不可當/摧堅克難/繕甲厲兵/潛龍在淵",
+        "zhanfa3": "調和陰陽+金城湯池/瞋目橫矛",
+        "advantage": "優郝昭薪火、馬妹、周瑜、魏延、諸葛蠻、大漢盾",
+        "disadvantage": "劣皇馬盾、陸遜、孫堅",
+        "troop_type": "槍騎盾",
+        "positioning": "前排：趙雲｜後排：姜維、甘夫人",
+        "stat_alloc": "姜維：一統全智｜趙雲：三統全武｜甘夫人：二統全智",
+        "taolue": "姜維：蜀武興略、兼資、文武｜趙雲：神勇（金書）、得勢、勝敏/破敵｜甘夫人：漢女傳（金書）、金鼓/敵勇、技藝/兵教",
+        "equipment": "智先/武智/智統｜武統｜智統",
+        "official_post": "越騎校尉（任意武將）",
+        "notes": "不佔用SP諸葛亮的高滿六隊共存規避隊，雙核輸出更穩定。",
+        "source": "slgguxi + 小仔哥"
+      },
+      {
+        "season": "S7",
+        "tier": "T1",
+        "name": "天水槍",
+        "formation": "魚鱗陣",
+        "wujiang1": "趙雲",
+        "wujiang2": "SP諸葛亮",
+        "wujiang3": "姜維",
+        "zhanfa1": "銳不可當+掠陣破軍",
+        "zhanfa2": "折衝禦侮+調和陰陽/空城計",
+        "zhanfa3": "勝敵益強+潛師襲遠",
+        "advantage": "能打赤壁弓、馬雲祿",
+        "disadvantage": "劣司馬懿、陸遜",
+        "troop_type": "騎盾槍",
+        "positioning": "前排：趙雲｜後排：SP諸葛亮、姜維",
+        "stat_alloc": "趙雲：全武｜SP諸葛亮：三統全智｜姜維：全智",
+        "taolue": "趙雲：神勇（金書）、久戰/勝敏、勝戰/金鼓｜SP諸葛亮：八陣（金書）、敵勇、兵令｜姜維：蜀武興略、兼資、文武",
+        "equipment": "武統｜智統/智先｜武智",
+        "official_post": "越騎校尉（規避）",
+        "notes": "SP諸葛亮配合姜維潛師襲遠與趙雲規避反擊，專抓赤壁與快攻。",
+        "source": "阿桂"
+      },
+      {
+        "season": "S7",
+        "tier": "T1",
+        "name": "諸甘太（赤壁克星）",
+        "formation": "魚鱗陣",
+        "wujiang1": "SP諸葛亮",
+        "wujiang2": "甘夫人",
+        "wujiang3": "太史慈",
+        "zhanfa1": "無難之志+金城湯池",
+        "zhanfa2": "以靜制動+蓄勢待發",
+        "zhanfa3": "萬軍辟易+潛龍在淵",
+        "advantage": "赤壁弓特工隊，中低紅手操黨強推",
+        "disadvantage": "需手操抓克制，泛用性較低",
+        "troop_type": "盾弓弓",
+        "positioning": "前排：SP諸葛亮｜後排：甘夫人、太史慈",
+        "stat_alloc": "SP諸葛亮：全智｜甘夫人：全智｜太史慈：全武",
+        "taolue": "SP諸葛亮：八陣、互勢、勝敏｜甘夫人：漢女傳、技藝、金鼓｜太史慈：礪弦、疾鬥、慢戰",
+        "equipment": "智統｜智統｜武先",
+        "official_post": "越騎校尉（任意武將）",
+        "notes": "專為狙擊赤壁弓設計的平民手操特化陣容。",
+        "source": "slgguxi"
+      },
+      {
+        "season": "S7",
+        "tier": "T1",
+        "name": "憋尿弓",
+        "formation": "方圓陣",
+        "wujiang1": "卞夫人",
+        "wujiang2": "鄧艾",
+        "wujiang3": "太史慈",
+        "zhanfa1": "橫徵暴斂+調和陰陽",
+        "zhanfa2": "蓄勢待發+步步為營",
+        "zhanfa3": "潛龍在淵+萬軍辟易",
+        "advantage": "最剋赤壁弓的隊伍",
+        "disadvantage": "實操不好抓克制（戰場槍弓弓同模隊伍較多）",
+        "troop_type": "弓槍弓",
+        "positioning": "前排：卞夫人、鄧艾｜後排：太史慈",
+        "stat_alloc": "卞夫人：全智｜鄧艾：全智｜太史慈：全武",
+        "taolue": "卞夫人：挽危（金書）、先勇、互勢/兵令｜鄧艾：濟河論（金書）、敵勇、互勢/兵令｜太史慈：礪弦（金書）、慢戰、慢鬥/突鬥",
+        "equipment": "智統｜智統｜武先",
+        "official_post": "",
+        "notes": "極致減傷拖回合配合太史慈潛龍在淵與萬軍辟易後期清場。",
+        "source": "阿桂"
+      },
+      {
+        "season": "S7",
+        "tier": "T1",
+        "name": "反擊典韋（勝敵銳不版）",
+        "formation": "錐形陣",
+        "wujiang1": "曹操",
+        "wujiang2": "典韋",
+        "wujiang3": "鄧艾/大喬",
+        "zhanfa1": "披堅執銳+挫銳折鋒",
+        "zhanfa2": "勝敵益強+銳不可當",
+        "zhanfa3": "折衝禦侮+百戰不殆/蓄勢待發",
+        "advantage": "大優各路追擊騎兵與普攻快攻體系",
+        "disadvantage": "怕法師主動隊、赤壁弓與虛弱控制",
+        "troop_type": "盾槍槍",
+        "positioning": "前排：典韋｜後排：曹操、鄧艾/大喬",
+        "stat_alloc": "曹操：全智｜典韋：全武（全隊統率第一）｜鄧艾/大喬：全智",
+        "taolue": "曹操：孟德新書下卷、武烈、先勇｜典韋：折武、集氣、武略｜鄧艾/大喬：濟河論、敵勇、折鋒",
+        "equipment": "智先｜武統｜智統",
+        "official_post": "擎天槍衛（曹操）",
+        "notes": "走勝敵益強＋銳不可當高面板反擊爆發路線，輔助位可選鄧艾或大喬。",
+        "source": "slgguxi"
+      },
+      {
+        "season": "S7",
+        "tier": "T1",
+        "name": "反擊典韋（勇冠萬夫版）",
+        "formation": "錐形陣",
+        "wujiang1": "鄧艾",
+        "wujiang2": "典韋",
+        "wujiang3": "曹操",
+        "zhanfa1": "避其銳氣+百戰不殆",
+        "zhanfa2": "勇冠三軍+萬夫莫當",
+        "zhanfa3": "折衝禦侮+披堅執銳",
+        "advantage": "大優各路追擊隊，專抓騎兵；適合反擊信仰玩家",
+        "disadvantage": "怕法師隊、赤壁弓與控制",
+        "troop_type": "槍槍槍",
+        "positioning": "前排：典韋｜後排：鄧艾、曹操",
+        "stat_alloc": "鄧艾：全智｜典韋：一統全武｜曹操：全智",
+        "taolue": "鄧艾：濟河論（金書）、折鋒、敵勇｜典韋：折武、集氣、分合｜曹操：孟德新書下卷、武烈、先勇",
+        "equipment": "智統｜武統｜智統",
+        "official_post": "擎天槍衛（曹操）",
+        "notes": "全紅度六隊共存配置，走經典勇冠三軍＋萬夫莫當反擊傳遞路線；折衝禦侮可用影子戰法。",
+        "source": "小仔哥"
+      },
+      {
+        "season": "S7",
+        "tier": "T1",
+        "name": "提速王異",
+        "formation": "鉤形陣",
+        "wujiang1": "王異",
+        "wujiang2": "樂進",
+        "wujiang3": "曹操",
+        "zhanfa1": "運智鋪謀+謀而後動",
+        "zhanfa2": "三軍奪氣+輕裝馳援/虎步連環",
+        "zhanfa3": "折衝禦侮+踐墨隨敵/空城計",
+        "advantage": "高頻謀略追擊，克制中慢速盾隊與無繳械陣容",
+        "disadvantage": "怕繳械控制與高爆發速攻",
+        "troop_type": "槍槍盾",
+        "positioning": "前排：曹操｜後排：王異、樂進",
+        "stat_alloc": "王異：全智｜樂進：全先攻（全隊統率最低）｜曹操：全智",
+        "taolue": "王異：節義風華、奪計、料敵｜樂進：同登、兵令、合謀｜曹操：孟德新書下卷、兵令、偵視",
+        "equipment": "智統｜智先｜智統",
+        "official_post": "擎天槍衛（曹操）",
+        "notes": "樂進提速帶動王異雙謀略追擊高頻輸出，曹操承傷減傷。",
+        "source": "slgguxi"
+      }
+    ];
+
+    // 為每筆資料附加穩定索引與計算屬性
+    const TEAMS = TEAMS_DATA.map((t, idx) => {
+      const sources = t.source.split('+').map(s => s.trim()).filter(Boolean);
+      return {
+        ...t,
+        id: idx,
+        sources,
+        sourceCount: sources.length,
+        isConsensus: sources.length >= 2
+      };
+    });
+
+    // =========================================================================
+    // 2. 常數設定與狀態管理
+    // =========================================================================
+    const TIER_ORDER = { 'T0.3': 1, 'T0.5': 2, 'T0.5+': 3, 'T0.8': 4, 'T0.8+': 5, 'T1': 6 };
+    const TIER_LIST = ['全部', 'T0.3', 'T0.5', 'T0.5+', 'T0.8', 'T0.8+', 'T1'];
+    const ALL_SOURCES = ['slgguxi', '貂蟬', '小仔哥', 'JX', '阿桂'];
+
+    // 高頻通用戰法 TOP 18（與資料庫統計精準對應）
+    const TOP_18_SKILLS = [
+      { name: '折衝禦侮', count: 23 },
+      { name: '踐墨隨敵', count: 14 },
+      { name: '勝敵益強', count: 13 },
+      { name: '銳不可當', count: 11 },
+      { name: '明其虛實', count: 8 },
+      { name: '蹈鋒飲血', count: 8 },
+      { name: '橫徵暴斂', count: 8 },
+      { name: '拔刀相向', count: 7 },
+      { name: '挫銳折鋒', count: 7 },
+      { name: '風助火勢', count: 6 },
+      { name: '潛龍在淵', count: 6 },
+      { name: '金城湯池', count: 6 },
+      { name: '步步為營', count: 5 },
+      { name: '調和陰陽', count: 5 },
+      { name: '戰八方', count: 5 },
+      { name: '一計決勝', count: 5 },
+      { name: '青囊急救', count: 5 },
+      { name: '空城計', count: 4 }
+    ];
+
+    // 克制查詢熱門目標與別名對應
+    const COUNTER_PRESETS = [
+      { label: '赤壁弓', terms: ['赤壁弓', '赤壁', 'SP周瑜'] },
+      { label: '皇馬盾', terms: ['皇馬盾', '皇馬'] },
+      { label: '郝昭薪火', terms: ['郝昭薪火', '薪火', '郝薪火'] },
+      { label: '孫堅', terms: ['孫堅', '左田堅', '左堅寧'] },
+      { label: '馬雲祿 / 馬妹', terms: ['馬雲祿', '馬妹'] },
+      { label: '陸遜 / 孫陸陸', terms: ['陸遜', '孫陸陸'] },
+      { label: '南蠻 / 木鹿蠻', terms: ['南蠻', '木鹿蠻', '諸葛蠻'] },
+      { label: '周瑜', terms: ['周瑜'] },
+      { label: '魏延', terms: ['魏延', '諸葛飛延'] },
+      { label: '司馬懿', terms: ['司馬懿', '司馬'] },
+      { label: '趙雲', terms: ['趙雲'] },
+      { label: '王雙', terms: ['王雙'] },
+      { label: '追擊/快攻', terms: ['追擊', '快攻', '速攻'] }
+    ];
+
+    // 應用程式狀態
+    const state = {
+      activeTab: 'explorer',
+      search: '',
+      tier: '全部',
+      formation: 'ALL',
+      source: 'ALL',
+      consensus: 'ALL', // 'ALL' | 'MULTI' | 'SINGLE'
+      sortBy: 'tier',   // 'tier' | 'consensus' | 'formation'
+      coexistIds: [],   // 最多 6 隊
+      activeCounterPreset: '赤壁弓',
+      counterCustomQuery: '',
+      modalTeamId: null
+    };
+
+    // =========================================================================
+    // 3. 工具函式
+    // =========================================================================
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getTierStyle(tier) {
+      switch (tier) {
+        case 'T0.3':
+          return 'bg-gradient-to-r from-imperial-500/30 via-crimson-500/25 to-imperial-500/30 text-imperial-400 border border-imperial-400/70 tier-glow-t03';
+        case 'T0.5':
+          return 'bg-imperial-500/20 text-imperial-400 border border-imperial-500/50';
+        case 'T0.5+':
+          return 'bg-amber-500/20 text-amber-300 border border-amber-500/50';
+        case 'T0.8':
+          return 'bg-sky-500/20 text-sky-300 border border-sky-500/40';
+        case 'T0.8+':
+          return 'bg-teal-500/20 text-teal-300 border border-teal-500/40';
+        default:
+          return 'bg-slate-700/60 text-slate-300 border border-slate-500/50';
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const colors = {
+        success: 'bg-obsidian-800 border-jade-500/70 text-jade-400',
+        warning: 'bg-obsidian-800 border-amber-500/70 text-amber-300',
+        error: 'bg-obsidian-800 border-crimson-500/70 text-crimson-400',
+        info: 'bg-obsidian-800 border-imperial-500/70 text-imperial-400'
+      };
+      toast.className = `pointer-events-auto px-4 py-2.5 rounded-xl border shadow-2xl text-sm font-medium flex items-center gap-2 animate-fade-in ${colors[type] || colors.info}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 2400);
+    }
+
+    function copyTextToClipboard(text) {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (ok) {
+          showToast('已複製完整配將文字至剪貼簿！', 'success');
+        } else {
+          showToast('複製失敗，請手動選取文字', 'error');
+        }
+      } catch (err) {
+        showToast('複製發生錯誤，請手動複製', 'error');
+      }
+    }
+
+    // =========================================================================
+    // 4. 分頁切換與初始化
+    // =========================================================================
+    function switchTab(tabName) {
+      state.activeTab = tabName;
+      document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`view-${tabName}`).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+        btn.classList.remove('bg-imperial-500', 'text-obsidian-950', 'shadow-md');
+        btn.classList.add('text-slate-300', 'hover:bg-obsidian-700/70', 'hover:text-white');
+      });
+      const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+      activeBtn.classList.remove('text-slate-300', 'hover:bg-obsidian-700/70', 'hover:text-white');
+      activeBtn.classList.add('bg-imperial-500', 'text-obsidian-950', 'shadow-md');
+
+      if (tabName === 'coexist') renderCoexistView();
+      if (tabName === 'counter') renderCounterView();
+      if (tabName === 'analytics') renderAnalyticsView();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function initApp() {
+      // 初始化梯隊膠囊
+      renderTierPills();
+
+      // 初始化陣型下拉選單（依出現頻率排序）
+      const formCounts = {};
+      TEAMS.forEach(t => { formCounts[t.formation] = (formCounts[t.formation] || 0) + 1; });
+      const formations = Object.keys(formCounts).sort((a, b) => formCounts[b] - formCounts[a]);
+      const formSelect = document.getElementById('filter-formation');
+      formations.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f;
+        opt.textContent = `${f}（${formCounts[f]}隊）`;
+        formSelect.appendChild(opt);
+      });
+
+      // 初始化共存快速加入選單
+      const quickAddSelect = document.getElementById('coexist-quick-add');
+      TEAMS.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = `[${t.tier}] ${t.name} — ${t.wujiang1} / ${t.wujiang2} / ${t.wujiang3} (${t.formation})`;
+        quickAddSelect.appendChild(opt);
+      });
+
+      // 初始化克制查詢熱門按鈕
+      renderCounterPresets();
+
+      // 預設狀態
+      setConsensusFilter('ALL', false);
+      switchTab('explorer');
+      renderExplorer();
+      renderAnalyticsView();
+    }
+
+    // =========================================================================
+    // 5. TAB 1：陣容圖鑑 (Team Comp Explorer)
+    // =========================================================================
+    function renderTierPills() {
+      const container = document.getElementById('tier-pills');
+      container.innerHTML = TIER_LIST.map(tier => {
+        const active = state.tier === tier;
+        const count = tier === '全部' ? TEAMS.length : TEAMS.filter(t => t.tier === tier).length;
+        const baseCls = active
+          ? 'bg-imperial-500 text-obsidian-950 border-imperial-400 font-bold shadow'
+          : 'bg-obsidian-900 text-slate-300 border-slate-700 hover:border-imperial-500/60 hover:text-imperial-400';
+        return `<button onclick="setTierFilter('${tier}')" class="px-3 py-1 rounded-full text-xs border transition ${baseCls}">${tier} <span class="opacity-75">(${count})</span></button>`;
+      }).join('');
+    }
+
+    function setTierFilter(tier) {
+      state.tier = tier;
+      renderTierPills();
+      renderExplorer();
+    }
+
+    function setConsensusFilter(mode, shouldRender = true) {
+      state.consensus = mode;
+      ['ALL', 'MULTI', 'SINGLE'].forEach(m => {
+        const btn = document.getElementById(`cons-btn-${m}`);
+        if (m === mode) {
+          btn.className = 'cons-btn py-1.5 rounded-lg font-bold transition bg-imperial-500/25 text-imperial-400 border border-imperial-500/40';
+        } else {
+          btn.className = 'cons-btn py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-slate-200 border border-transparent';
+        }
+      });
+      if (shouldRender) renderExplorer();
+    }
+
+    function handleFilterChange() {
+      const searchEl = document.getElementById('search-input');
+      state.search = searchEl.value.trim();
+      document.getElementById('clear-search-btn').classList.toggle('hidden', !state.search);
+      state.formation = document.getElementById('filter-formation').value;
+      state.source = document.getElementById('filter-source').value;
+      state.sortBy = document.getElementById('sort-by').value;
+      renderExplorer();
+    }
+
+    function clearSearch() {
+      document.getElementById('search-input').value = '';
+      handleFilterChange();
+    }
+
+    function resetAllFilters() {
+      document.getElementById('search-input').value = '';
+      document.getElementById('filter-formation').value = 'ALL';
+      document.getElementById('filter-source').value = 'ALL';
+      document.getElementById('sort-by').value = 'tier';
+      state.search = '';
+      state.tier = '全部';
+      state.formation = 'ALL';
+      state.source = 'ALL';
+      state.sortBy = 'tier';
+      document.getElementById('clear-search-btn').classList.add('hidden');
+      renderTierPills();
+      setConsensusFilter('ALL', false);
+      renderExplorer();
+    }
+
+    function getFilteredTeams() {
+      const q = state.search.toLowerCase();
+      let list = TEAMS.filter(t => {
+        if (state.tier !== '全部' && t.tier !== state.tier) return false;
+        if (state.formation !== 'ALL' && t.formation !== state.formation) return false;
+        if (state.source !== 'ALL' && !t.sources.includes(state.source)) return false;
+        if (state.consensus === 'MULTI' && !t.isConsensus) return false;
+        if (state.consensus === 'SINGLE' && t.isConsensus) return false;
+
+        if (q) {
+          const searchable = [
+            t.name, t.wujiang1, t.wujiang2, t.wujiang3,
+            t.zhanfa1, t.zhanfa2, t.zhanfa3,
+            t.formation, t.official_post, t.advantage, t.disadvantage, t.notes, t.source
+          ].join(' ').toLowerCase();
+          return searchable.includes(q);
+        }
+        return true;
+      });
+
+      // 排序
+      list.sort((a, b) => {
+        if (state.sortBy === 'tier') {
+          const diff = (TIER_ORDER[a.tier] || 99) - (TIER_ORDER[b.tier] || 99);
+          if (diff !== 0) return diff;
+          return b.sourceCount - a.sourceCount;
+        }
+        if (state.sortBy === 'consensus') {
+          if (b.sourceCount !== a.sourceCount) return b.sourceCount - a.sourceCount;
+          return (TIER_ORDER[a.tier] || 99) - (TIER_ORDER[b.tier] || 99);
+        }
+        if (state.sortBy === 'formation') {
+          const fDiff = a.formation.localeCompare(b.formation, 'zh-Hant');
+          if (fDiff !== 0) return fDiff;
+          return (TIER_ORDER[a.tier] || 99) - (TIER_ORDER[b.tier] || 99);
+        }
+        return 0;
+      });
+      return list;
+    }
+
+    function renderExplorer() {
+      const list = getFilteredTeams();
+      const grid = document.getElementById('team-grid');
+      const empty = document.getElementById('empty-state');
+      document.getElementById('result-count').textContent = list.length;
+
+      // 顯示目前篩選提示
+      const hints = [];
+      if (state.search) hints.push(`關鍵字「${state.search}」`);
+      if (state.tier !== '全部') hints.push(`梯隊 ${state.tier}`);
+      if (state.formation !== 'ALL') hints.push(state.formation);
+      if (state.source !== 'ALL') hints.push(`來源 ${state.source}`);
+      if (state.consensus === 'MULTI') hints.push('僅多表共識');
+      if (state.consensus === 'SINGLE') hints.push('僅單表獨有');
+      document.getElementById('active-filter-hint').textContent = hints.length ? `（篩選：${hints.join(' · ')}）` : '';
+
+      if (list.length === 0) {
+        grid.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      grid.innerHTML = list.map(t => {
+        const inCoexist = state.coexistIds.includes(t.id);
+        const consensusTag = t.isConsensus
+          ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-jade-500/15 text-jade-400 border border-jade-500/30">${t.sourceCount}表共識</span>`
+          : `<span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-700/50 text-slate-400 border border-slate-600/40">單表獨有</span>`;
+
+        const coexistBtnCls = inCoexist
+          ? 'bg-jade-500/20 text-jade-400 border-jade-500/50 hover:bg-jade-500/30'
+          : 'bg-obsidian-900 text-slate-300 border-slate-700 hover:border-imperial-500/60 hover:text-imperial-400';
+
+        return `
+          <article class="card-hover bg-obsidian-800/95 border border-slate-700/70 rounded-2xl p-4 flex flex-col justify-between gap-3.5 shadow-lg">
+            <div class="space-y-3">
+              <!-- 卡片標頭 -->
+              <div class="flex items-start justify-between gap-2">
+                <div class="space-y-1.5 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="px-2.5 py-0.5 rounded-lg text-xs font-extrabold tracking-wide ${getTierStyle(t.tier)}">${t.tier}</span>
+                    <h3 class="text-base font-bold text-slate-100 truncate" title="${escapeHtml(t.name)}">${escapeHtml(t.name)}</h3>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-obsidian-900 text-imperial-400 border border-imperial-500/30">${escapeHtml(t.formation)}</span>
+                    <span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-obsidian-900 text-slate-300 border border-slate-700">${escapeHtml(t.troop_type)}</span>
+                    ${consensusTag}
+                  </div>
+                </div>
+              </div>
+
+              <!-- 三武將與戰法精簡 3 欄 -->
+              <div class="grid grid-cols-3 gap-2">
+                ${[1, 2, 3].map(n => `
+                  <div class="bg-obsidian-900/90 border border-slate-700/60 rounded-xl p-2 flex flex-col gap-1">
+                    <div class="text-xs font-bold text-imperial-400 truncate" title="${escapeHtml(t['wujiang' + n])}">${escapeHtml(t['wujiang' + n])}</div>
+                    <div class="text-[11px] leading-snug text-slate-300 break-words">${formatSkillsMini(t['zhanfa' + n])}</div>
+                  </div>
+                `).join('')}
+              </div>
+
+              <!-- 優劣勢摘要 -->
+              <div class="space-y-1.5 text-xs">
+                <div class="flex items-start gap-1.5 bg-jade-500/8 border border-jade-500/20 rounded-lg px-2.5 py-1.5">
+                  <span class="shrink-0 px-1.5 py-0.2 rounded bg-jade-500/25 text-jade-400 font-bold text-[10px] mt-0.5">優</span>
+                  <p class="text-slate-300 line-clamp-2 leading-relaxed">${escapeHtml(t.advantage)}</p>
+                </div>
+                <div class="flex items-start gap-1.5 bg-crimson-500/8 border border-crimson-500/20 rounded-lg px-2.5 py-1.5">
+                  <span class="shrink-0 px-1.5 py-0.2 rounded bg-crimson-500/25 text-crimson-400 font-bold text-[10px] mt-0.5">劣</span>
+                  <p class="text-slate-300 line-clamp-2 leading-relaxed">${escapeHtml(t.disadvantage)}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 底部操作按鈕 -->
+            <div class="flex items-center gap-2 pt-2 border-t border-slate-700/50">
+              <button onclick="openDetailModal(${t.id})" class="flex-1 py-2 px-3 rounded-xl bg-imperial-500/15 hover:bg-imperial-500/25 text-imperial-400 border border-imperial-500/40 text-xs font-bold transition">
+                查看詳情
+              </button>
+              <button onclick="toggleCoexist(${t.id})" class="flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition ${coexistBtnCls}">
+                ${inCoexist ? '✓ 已加入共存' : '＋ 加入共存'}
+              </button>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function formatSkillsMini(zhanfaStr) {
+      return zhanfaStr.split('+').map(slot => `<div class="truncate" title="${escapeHtml(slot)}">· ${escapeHtml(slot)}</div>`).join('');
+    }
+
+    // =========================================================================
+    // 6. 陣容詳情彈窗 (Team Detail Modal)
+    // =========================================================================
+    function parsePositioning(posStr) {
+      // 解析前排與後排武將
+      const parts = posStr.split('｜');
+      let front = '';
+      let back = '';
+      let note = '';
+
+      parts.forEach(p => {
+        const clean = p.trim();
+        if (clean.startsWith('前排：')) {
+          front = clean.replace('前排：', '');
+        } else if (clean.startsWith('後排：')) {
+          back = clean.replace('後排：', '');
+        }
+      });
+
+      // 擷取括號內補充說明
+      const extractNote = (str) => {
+        const match = str.match(/（([^）]+)）/);
+        if (match) {
+          note = (note ? note + '；' : '') + match[1];
+          return str.replace(/（[^）]+）/g, '').trim();
+        }
+        return str;
+      };
+
+      const frontList = extractNote(front).split(/[、,，]/).map(s => s.trim()).filter(Boolean);
+      const backList = extractNote(back).split(/[、,，]/).map(s => s.trim()).filter(Boolean);
+      return { frontList, backList, note };
+    }
+
+    function openDetailModal(teamId) {
+      const t = TEAMS.find(item => item.id === teamId);
+      if (!t) return;
+      state.modalTeamId = teamId;
+
+      const modal = document.getElementById('detail-modal');
+      const header = document.getElementById('modal-header');
+      const body = document.getElementById('modal-body');
+      const footer = document.getElementById('modal-footer');
+
+      const statParts = t.stat_alloc.split('｜').map(s => s.trim());
+      const taolueParts = t.taolue.split('｜').map(s => s.trim());
+      const equipParts = t.equipment.split('｜').map(s => s.trim());
+      const pos = parsePositioning(t.positioning);
+      const inCoexist = state.coexistIds.includes(t.id);
+
+      // Header
+      header.innerHTML = `
+        <div class="space-y-1.5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-lg text-xs font-extrabold ${getTierStyle(t.tier)}">${t.tier}</span>
+            <h2 class="text-lg sm:text-xl font-bold text-slate-100">${escapeHtml(t.name)}</h2>
+            <span class="px-2 py-0.5 rounded-md text-xs bg-obsidian-900 text-imperial-400 border border-imperial-500/30">${escapeHtml(t.formation)}</span>
+            <span class="px-2 py-0.5 rounded-md text-xs bg-obsidian-900 text-slate-300 border border-slate-700">${escapeHtml(t.troop_type)}</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
+            <div><span class="text-slate-500">幕僚 / 職位：</span><span class="text-amber-300 font-medium">${escapeHtml(t.official_post || '無指定幕僚')}</span></div>
+            <div><span class="text-slate-500">攻略來源：</span><span class="text-sky-300 font-medium">${escapeHtml(t.source)}</span></div>
+          </div>
+        </div>
+        <button onclick="closeDetailModal()" class="p-2 rounded-xl bg-obsidian-900 hover:bg-obsidian-700 text-slate-400 hover:text-white border border-slate-700 transition shrink-0" aria-label="關閉">
+          ✕
+        </button>
+      `;
+
+      // Body
+      body.innerHTML = `
+        <!-- 視覺化戰術站位圖 -->
+        <div class="bg-obsidian-800/80 border border-slate-700/70 rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <h3 class="text-sm font-bold text-imperial-400 flex items-center gap-1.5">
+              <span>🛡️</span> 戰術站位圖（${escapeHtml(t.formation)}）
+            </h3>
+            <span class="text-xs text-slate-400">${escapeHtml(t.positioning)}</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- 後排 -->
+            <div class="bg-obsidian-900/90 border border-sky-500/25 rounded-xl p-3 space-y-2">
+              <div class="text-[11px] font-bold text-sky-400 uppercase tracking-wider flex items-center justify-between">
+                <span>後排陣位</span>
+                <span class="text-slate-500">${pos.backList.length} 名武將</span>
+              </div>
+              <div class="flex flex-wrap gap-2 min-h-[44px] items-center">
+                ${pos.backList.length
+                  ? pos.backList.map(g => `<div class="px-3.5 py-2 rounded-lg bg-sky-500/15 border border-sky-500/40 text-sky-200 font-bold text-sm shadow-sm">${escapeHtml(g)}</div>`).join('')
+                  : '<span class="text-xs text-slate-500 italic">無後排武將（全前排陣型）</span>'
+                }
+              </div>
+            </div>
+            <!-- 前排 -->
+            <div class="bg-obsidian-900/90 border border-imperial-500/35 rounded-xl p-3 space-y-2">
+              <div class="text-[11px] font-bold text-imperial-400 uppercase tracking-wider flex items-center justify-between">
+                <span>前排承傷 / 突擊位</span>
+                <span class="text-slate-500">${pos.frontList.length} 名武將</span>
+              </div>
+              <div class="flex flex-wrap gap-2 min-h-[44px] items-center">
+                ${pos.frontList.map(g => `<div class="px-3.5 py-2 rounded-lg bg-imperial-500/15 border border-imperial-500/50 text-imperial-300 font-bold text-sm shadow-sm">${escapeHtml(g)}</div>`).join('')}
+              </div>
+            </div>
+          </div>
+          ${pos.note ? `<div class="text-xs text-amber-300/90 bg-amber-500/10 border border-amber-500/25 rounded-lg px-3 py-1.5">💡 站位補充：${escapeHtml(pos.note)}</div>` : ''}
+        </div>
+
+        <!-- 三位武將詳細配置卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          ${[0, 1, 2].map(i => {
+            const wj = t['wujiang' + (i + 1)];
+            const zf = t['zhanfa' + (i + 1)];
+            const statText = (statParts[i] || '—').replace(new RegExp('^' + wj.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '：'), '');
+            const taolueText = (taolueParts[i] || '—').replace(new RegExp('^' + wj.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '：'), '');
+            const equipText = equipParts[i] || '—';
+
+            return `
+              <div class="bg-obsidian-800/90 border border-slate-700/70 rounded-2xl p-4 space-y-3 flex flex-col">
+                <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+                  <span class="text-base font-extrabold text-imperial-400">${escapeHtml(wj)}</span>
+                  <span class="text-[11px] px-2 py-0.5 rounded bg-obsidian-900 text-slate-400 border border-slate-700">武將 ${i + 1}</span>
+                </div>
+                <div class="space-y-2.5 text-xs flex-1">
+                  <div>
+                    <div class="text-slate-500 font-semibold mb-1">戰法搭配</div>
+                    <div class="flex flex-wrap gap-1.5">
+                      ${zf.split('+').map(slot => `<span class="px-2 py-1 rounded-lg bg-obsidian-900 border border-imperial-500/30 text-slate-100 font-medium">${escapeHtml(slot)}</span>`).join('')}
+                    </div>
+                  </div>
+                  <div>
+                    <div class="text-slate-500 font-semibold mb-0.5">加點 / 調統</div>
+                    <div class="text-slate-200 leading-relaxed">${escapeHtml(statText)}</div>
+                  </div>
+                  <div>
+                    <div class="text-slate-500 font-semibold mb-0.5">韜略配置</div>
+                    <div class="text-slate-200 leading-relaxed">${escapeHtml(taolueText)}</div>
+                  </div>
+                  <div>
+                    <div class="text-slate-500 font-semibold mb-0.5">裝備特技 / 詞條</div>
+                    <div class="inline-block px-2 py-0.5 rounded bg-obsidian-900 border border-slate-700 text-amber-300 font-medium">${escapeHtml(equipText)}</div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        <!-- 優劣勢對局高亮方塊 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div class="bg-jade-500/10 border border-jade-500/35 rounded-2xl p-4 space-y-1.5">
+            <div class="text-xs font-bold text-jade-400 flex items-center gap-1.5">
+              <span>✅</span> 優勢對局
+            </div>
+            <p class="text-slate-200 leading-relaxed text-sm">${escapeHtml(t.advantage)}</p>
+          </div>
+          <div class="bg-crimson-500/10 border border-crimson-500/35 rounded-2xl p-4 space-y-1.5">
+            <div class="text-xs font-bold text-crimson-400 flex items-center gap-1.5">
+              <span>⚠️</span> 劣勢對局
+            </div>
+            <p class="text-slate-200 leading-relaxed text-sm">${escapeHtml(t.disadvantage)}</p>
+          </div>
+        </div>
+
+        <!-- 實戰備註 -->
+        <div class="bg-obsidian-800/80 border border-slate-700/70 rounded-2xl p-4 space-y-1.5">
+          <div class="text-xs font-bold text-imperial-400 flex items-center gap-1.5">
+            <span>📝</span> 實戰備註
+          </div>
+          <p class="text-slate-300 leading-relaxed text-sm">${escapeHtml(t.notes)}</p>
+        </div>
+      `;
+
+      // Footer
+      footer.innerHTML = `
+        <button onclick="copyTeamBuild(${t.id})" class="px-4 py-2 rounded-xl bg-imperial-500 hover:bg-imperial-400 text-obsidian-950 font-bold text-xs sm:text-sm transition flex items-center gap-1.5">
+          <span>📋</span> 一鍵複製配將文字
+        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="toggleCoexist(${t.id}); openDetailModal(${t.id});" class="px-4 py-2 rounded-xl border text-xs sm:text-sm font-bold transition ${inCoexist ? 'bg-jade-500/20 text-jade-400 border-jade-500/50' : 'bg-obsidian-900 text-slate-200 border-slate-600 hover:border-imperial-500'}">
+            ${inCoexist ? '✓ 已在共存清單' : '＋ 加入共存模擬'}
+          </button>
+          <button onclick="closeDetailModal()" class="px-4 py-2 rounded-xl bg-obsidian-700 hover:bg-obsidian-600 text-slate-200 text-xs sm:text-sm font-semibold transition">
+            關閉
+          </button>
+        </div>
+      `;
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeDetailModal() {
+      const modal = document.getElementById('detail-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = '';
+      state.modalTeamId = null;
+    }
+
+    function handleModalBackdrop(e) {
+      if (e.target.id === 'detail-modal') closeDetailModal();
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && state.modalTeamId !== null) closeDetailModal();
+    });
+
+    function copyTeamBuild(teamId) {
+      const t = TEAMS.find(item => item.id === teamId);
+      if (!t) return;
+      const text = [
+        `【${t.season} 配將｜${t.tier}】${t.name}`,
+        `陣型：${t.formation}｜兵種：${t.troop_type}｜幕僚：${t.official_post || '無'}`,
+        `站位：${t.positioning}`,
+        `──────────────────`,
+        `1. ${t.wujiang1}：${t.zhanfa1}`,
+        `2. ${t.wujiang2}：${t.zhanfa2}`,
+        `3. ${t.wujiang3}：${t.zhanfa3}`,
+        `──────────────────`,
+        `加點：${t.stat_alloc}`,
+        `韜略：${t.taolue}`,
+        `裝備：${t.equipment}`,
+        `優勢：${t.advantage}`,
+        `劣勢：${t.disadvantage}`,
+        `備註：${t.notes}`,
+        `來源：${t.source}`
+      ].join('\n');
+      copyTextToClipboard(text);
+    }
+
+    // =========================================================================
+    // 7. TAB 2：共存模擬器與衝突檢測引擎 (Coexistence & Conflict Checker)
+    // =========================================================================
+    function updateCoexistBadge() {
+      const badge = document.getElementById('coexist-badge');
+      badge.textContent = `${state.coexistIds.length}/6`;
+      const countText = document.getElementById('coexist-count-text');
+      if (countText) countText.textContent = state.coexistIds.length;
+    }
+
+    function toggleCoexist(teamId) {
+      const idx = state.coexistIds.indexOf(teamId);
+      const team = TEAMS.find(t => t.id === teamId);
+      if (idx >= 0) {
+        state.coexistIds.splice(idx, 1);
+        showToast(`已移除「${team.name}」`, 'info');
+      } else {
+        if (state.coexistIds.length >= 6) {
+          showToast('共存模擬器最多選擇 6 隊，請先移除部分隊伍！', 'warning');
+          return;
+        }
+        state.coexistIds.push(teamId);
+        showToast(`已加入「${team.name}」至共存模擬器`, 'success');
+      }
+      updateCoexistBadge();
+      renderExplorer();
+      if (state.activeTab === 'coexist') renderCoexistView();
+    }
+
+    function quickAddCoexist() {
+      const sel = document.getElementById('coexist-quick-add');
+      if (sel.value === '') {
+        showToast('請先選擇要加入的陣容', 'warning');
+        return;
+      }
+      const id = Number(sel.value);
+      if (state.coexistIds.includes(id)) {
+        showToast('該陣容已在共存清單中', 'warning');
+        return;
+      }
+      toggleCoexist(id);
+      sel.value = '';
+    }
+
+    function clearCoexist() {
+      state.coexistIds = [];
+      updateCoexistBadge();
+      renderExplorer();
+      renderCoexistView();
+      showToast('已清空共存模擬清單', 'info');
+    }
+
+    function loadPreset(presetType) {
+      let targetNames = [];
+      if (presetType === 'hot4') {
+        targetNames = ['赤壁弓（常規版）', '皇馬盾', '左堅寧', '諸馬馬（馬妹）'];
+      } else if (presetType === 'cup4') {
+        // 示範無武將衝突且極低戰法衝突的杯賽四隊
+        targetNames = ['皇馬盾', '箕陸陸（主動內戰版）', '追擊南蠻（追擊蠻）', '樂馬雙（新王雙）'];
+      }
+      const ids = targetNames
+        .map(name => TEAMS.find(t => t.name === name))
+        .filter(Boolean)
+        .map(t => t.id);
+
+      state.coexistIds = ids;
+      updateCoexistBadge();
+      renderExplorer();
+      renderCoexistView();
+      showToast(`已載入預設組合（${ids.length} 隊）`, 'success');
+    }
+
+    // 衝突檢測核心演算法
+    function analyzeConflicts(selectedTeams) {
+      // 1. 武將衝突檢測（拆分 "/" 選項，例如 鄧艾/大喬）
+      const generalMap = {}; // generalName -> [{ teamName, teamId, isStrict }]
+      selectedTeams.forEach(t => {
+        const seenInTeam = new Set();
+        [t.wujiang1, t.wujiang2, t.wujiang3].forEach(wStr => {
+          const opts = wStr.split('/').map(s => s.trim()).filter(Boolean);
+          const isStrict = opts.length === 1;
+          opts.forEach(g => {
+            if (seenInTeam.has(g)) return;
+            seenInTeam.add(g);
+            if (!generalMap[g]) generalMap[g] = [];
+            generalMap[g].push({ teamName: t.name, teamId: t.id, isStrict, raw: wStr });
+          });
+        });
+      });
+
+      const generalConflicts = [];
+      Object.entries(generalMap).forEach(([general, uses]) => {
+        if (uses.length >= 2) {
+          const strictCount = uses.filter(u => u.isStrict).length;
+          generalConflicts.push({
+            name: general,
+            severity: strictCount >= 2 ? 'strict' : 'adjustable',
+            uses
+          });
+        }
+      });
+
+      // 2. 戰法衝突檢測（先以 "+" 拆分槽位，再以 "/" 拆分替代選項）
+      const skillMap = {}; // skillName -> Map(teamId -> { teamName, teamId, isStrict })
+      selectedTeams.forEach(t => {
+        const teamSkillStatus = {}; // skill -> boolean (true = strict required by this team)
+        [t.zhanfa1, t.zhanfa2, t.zhanfa3].forEach(zfStr => {
+          const slots = zfStr.split('+').map(s => s.trim()).filter(Boolean);
+          slots.forEach(slot => {
+            const opts = slot.split('/').map(s => s.trim()).filter(Boolean);
+            const isStrictSlot = opts.length === 1;
+            opts.forEach(sk => {
+              // 若同隊有多槽位提及同戰法，只要任一槽位是必帶則視為 strict
+              if (teamSkillStatus[sk] === undefined) {
+                teamSkillStatus[sk] = isStrictSlot;
+              } else {
+                teamSkillStatus[sk] = teamSkillStatus[sk] || isStrictSlot;
+              }
+            });
+          });
+        });
+
+        Object.entries(teamSkillStatus).forEach(([sk, isStrict]) => {
+          if (!skillMap[sk]) skillMap[sk] = [];
+          skillMap[sk].push({ teamName: t.name, teamId: t.id, isStrict });
+        });
+      });
+
+      const skillStrictConflicts = [];
+      const skillAdjustableConflicts = [];
+
+      Object.entries(skillMap).forEach(([skill, uses]) => {
+        if (uses.length >= 2) {
+          const strictCount = uses.filter(u => u.isStrict).length;
+          if (strictCount >= 2) {
+            skillStrictConflicts.push({ name: skill, severity: 'strict', uses });
+          } else {
+            skillAdjustableConflicts.push({ name: skill, severity: 'adjustable', uses });
+          }
+        }
+      });
+
+      // 依衝突隊數排序
+      generalConflicts.sort((a, b) => (a.severity === 'strict' ? -1 : 1) || b.uses.length - a.uses.length);
+      skillStrictConflicts.sort((a, b) => b.uses.length - a.uses.length);
+      skillAdjustableConflicts.sort((a, b) => b.uses.length - a.uses.length);
+
+      return { generalConflicts, skillStrictConflicts, skillAdjustableConflicts };
+    }
+
+    function renderCoexistView() {
+      updateCoexistBadge();
+      const selectedTeams = state.coexistIds.map(id => TEAMS.find(t => t.id === id)).filter(Boolean);
+      const reportEl = document.getElementById('conflict-report');
+      const gridEl = document.getElementById('coexist-grid');
+
+      if (selectedTeams.length === 0) {
+        reportEl.innerHTML = `
+          <div class="bg-obsidian-800/70 border border-slate-700/60 rounded-2xl p-8 text-center space-y-2">
+            <div class="text-3xl">🛡️</div>
+            <h3 class="text-base font-bold text-slate-200">尚未選擇任何陣容</h3>
+            <p class="text-xs sm:text-sm text-slate-400">請從上方下拉選單加入隊伍、點選預設組合，或在「陣容圖鑑」點擊「＋ 加入共存」。</p>
+          </div>
+        `;
+        gridEl.innerHTML = '';
+        return;
+      }
+
+      const { generalConflicts, skillStrictConflicts, skillAdjustableConflicts } = analyzeConflicts(selectedTeams);
+      const strictGeneralCount = generalConflicts.filter(c => c.severity === 'strict').length;
+      const totalStrict = strictGeneralCount + skillStrictConflicts.length;
+      const totalAdjustable = (generalConflicts.length - strictGeneralCount) + skillAdjustableConflicts.length;
+
+      // 狀態總覽橫幅
+      let bannerHtml = '';
+      if (totalStrict === 0 && totalAdjustable === 0) {
+        bannerHtml = `
+          <div class="bg-jade-500/15 border border-jade-500/50 rounded-2xl p-4 sm:p-5 flex items-center gap-3.5">
+            <div class="text-3xl">✅</div>
+            <div>
+              <h3 class="text-base sm:text-lg font-extrabold text-jade-400">0 衝突完美共存！</h3>
+              <p class="text-xs sm:text-sm text-slate-300 mt-0.5">目前選擇的 ${selectedTeams.length} 隊之間無任何武將或戰法重疊，可直接成型上陣。</p>
+            </div>
+          </div>
+        `;
+      } else {
+        const isRed = totalStrict > 0;
+        bannerHtml = `
+          <div class="${isRed ? 'bg-crimson-500/12 border-crimson-500/50' : 'bg-amber-500/12 border-amber-500/50'} border rounded-2xl p-4 sm:p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">${isRed ? '🚨' : '⚠️'}</span>
+                <div>
+                  <h3 class="text-base sm:text-lg font-extrabold ${isRed ? 'text-crimson-400' : 'text-amber-300'}">
+                    ${isRed ? `偵測到 ${totalStrict} 項嚴格衝突` : '無嚴格衝突，但有可調重疊'}
+                    ${totalAdjustable > 0 ? `（另有 ${totalAdjustable} 項可調衝突）` : ''}
+                  </h3>
+                  <p class="text-xs text-slate-400 mt-0.5">紅色為雙隊皆必帶且無「/」替代；琥珀色可透過調整替代戰法或影子戰法解決。</p>
+                </div>
+              </div>
+              <div class="flex gap-2 text-xs font-bold shrink-0">
+                <span class="px-2.5 py-1 rounded-lg bg-crimson-500/20 text-crimson-400 border border-crimson-500/40">武將衝突：${generalConflicts.length}</span>
+                <span class="px-2.5 py-1 rounded-lg bg-crimson-500/20 text-crimson-400 border border-crimson-500/40">戰法嚴格：${skillStrictConflicts.length}</span>
+                <span class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40">戰法可調：${skillAdjustableConflicts.length}</span>
+              </div>
+            </div>
+
+            <!-- 衝突明細列表 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-700/50">
+              <!-- 武將衝突 -->
+              <div class="bg-obsidian-900/80 border border-slate-700/70 rounded-xl p-3.5 space-y-2">
+                <div class="text-xs font-bold text-crimson-400">👤 武將衝突（${generalConflicts.length}）</div>
+                ${generalConflicts.length === 0
+                  ? '<div class="text-xs text-jade-400">✓ 無武將重複</div>'
+                  : generalConflicts.map(c => `
+                    <div class="text-xs bg-obsidian-800 border ${c.severity === 'strict' ? 'border-crimson-500/40' : 'border-amber-500/40'} rounded-lg p-2 space-y-1">
+                      <div class="font-bold ${c.severity === 'strict' ? 'text-crimson-400' : 'text-amber-300'} flex items-center justify-between">
+                        <span>${escapeHtml(c.name)}</span>
+                        <span class="text-[10px] px-1.5 py-0.2 rounded ${c.severity === 'strict' ? 'bg-crimson-500/20' : 'bg-amber-500/20'}">${c.severity === 'strict' ? '嚴格' : '可調'}</span>
+                      </div>
+                      <div class="text-slate-400">${c.uses.map(u => `${escapeHtml(u.teamName)}${u.isStrict ? '' : '(可替)'}`).join('、')}</div>
+                    </div>
+                  `).join('')
+                }
+              </div>
+
+              <!-- 戰法嚴格衝突 -->
+              <div class="bg-obsidian-900/80 border border-slate-700/70 rounded-xl p-3.5 space-y-2">
+                <div class="text-xs font-bold text-crimson-400">📕 戰法嚴格衝突（${skillStrictConflicts.length}）</div>
+                ${skillStrictConflicts.length === 0
+                  ? '<div class="text-xs text-jade-400">✓ 無必帶戰法衝突</div>'
+                  : skillStrictConflicts.map(c => `
+                    <div class="text-xs bg-obsidian-800 border border-crimson-500/40 rounded-lg p-2 space-y-1">
+                      <div class="font-bold text-crimson-400">${escapeHtml(c.name)}（${c.uses.length} 隊）</div>
+                      <div class="text-slate-400">${c.uses.map(u => `${escapeHtml(u.teamName)}${u.isStrict ? '' : '(選帶)'}`).join('、')}</div>
+                    </div>
+                  `).join('')
+                }
+              </div>
+
+              <!-- 戰法可調衝突 -->
+              <div class="bg-obsidian-900/80 border border-slate-700/70 rounded-xl p-3.5 space-y-2">
+                <div class="text-xs font-bold text-amber-300">📙 可調衝突 / 替代重疊（${skillAdjustableConflicts.length}）</div>
+                ${skillAdjustableConflicts.length === 0
+                  ? '<div class="text-xs text-slate-500">無可調重疊戰法</div>'
+                  : skillAdjustableConflicts.map(c => `
+                    <div class="text-xs bg-obsidian-800 border border-amber-500/35 rounded-lg p-2 space-y-1">
+                      <div class="font-bold text-amber-300">${escapeHtml(c.name)}（${c.uses.length} 隊）</div>
+                      <div class="text-slate-400">${c.uses.map(u => `${escapeHtml(u.teamName)}${u.isStrict ? '(必帶)' : '(可替)'}`).join('、')}</div>
+                    </div>
+                  `).join('')
+                }
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      reportEl.innerHTML = bannerHtml;
+
+      // 建立衝突標記集合，讓卡片內高亮顯示衝突的武將與戰法
+      const strictGenerals = new Set(generalConflicts.filter(c => c.severity === 'strict').map(c => c.name));
+      const adjGenerals = new Set(generalConflicts.filter(c => c.severity !== 'strict').map(c => c.name));
+      const strictSkills = new Set(skillStrictConflicts.map(c => c.name));
+      const adjSkills = new Set(skillAdjustableConflicts.map(c => c.name));
+
+      const highlightGeneral = (wStr) => {
+        return wStr.split('/').map(g => {
+          const clean = g.trim();
+          if (strictGenerals.has(clean)) return `<span class="text-crimson-400 underline decoration-crimson-400">${escapeHtml(clean)}</span>`;
+          if (adjGenerals.has(clean)) return `<span class="text-amber-300 underline decoration-amber-300">${escapeHtml(clean)}</span>`;
+          return `<span class="text-imperial-400">${escapeHtml(clean)}</span>`;
+        }).join('/');
+      };
+
+      const highlightSkills = (zfStr) => {
+        return zfStr.split('+').map(slot => {
+          const renderedOpts = slot.split('/').map(sk => {
+            const clean = sk.trim();
+            if (strictSkills.has(clean)) return `<span class="text-crimson-400 font-bold bg-crimson-500/15 px-1 rounded">${escapeHtml(clean)}</span>`;
+            if (adjSkills.has(clean)) return `<span class="text-amber-300 font-semibold bg-amber-500/15 px-1 rounded">${escapeHtml(clean)}</span>`;
+            return escapeHtml(clean);
+          }).join('<span class="text-slate-500">/</span>');
+          return `<div class="leading-relaxed">· ${renderedOpts}</div>`;
+        }).join('');
+      };
+
+      gridEl.innerHTML = selectedTeams.map((t, index) => `
+        <div class="bg-obsidian-800/95 border border-slate-700/80 rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-lg">
+          <div class="space-y-3">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="w-5 h-5 rounded-full bg-imperial-500/20 text-imperial-400 text-xs font-bold flex items-center justify-center border border-imperial-500/40">${index + 1}</span>
+                  <span class="px-2 py-0.5 rounded text-[11px] font-bold ${getTierStyle(t.tier)}">${t.tier}</span>
+                  <h4 class="font-bold text-slate-100 text-sm">${escapeHtml(t.name)}</h4>
+                </div>
+                <div class="text-[11px] text-slate-400 mt-1">${escapeHtml(t.formation)} · ${escapeHtml(t.troop_type)}</div>
+              </div>
+              <button onclick="toggleCoexist(${t.id})" class="text-xs px-2.5 py-1 rounded-lg bg-crimson-500/15 hover:bg-crimson-500/30 text-crimson-400 border border-crimson-500/30 transition shrink-0">
+                移除
+              </button>
+            </div>
+            <div class="space-y-1.5 text-xs">
+              ${[1, 2, 3].map(n => `
+                <div class="bg-obsidian-900/90 border border-slate-700/60 rounded-xl px-3 py-2">
+                  <div class="font-bold mb-0.5">${highlightGeneral(t['wujiang' + n])}</div>
+                  <div class="text-[11px] text-slate-300">${highlightSkills(t['zhanfa' + n])}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <button onclick="openDetailModal(${t.id})" class="w-full py-1.5 rounded-xl bg-obsidian-700 hover:bg-obsidian-600 text-slate-200 text-xs font-semibold transition">
+            查看完整配置詳情
+          </button>
+        </div>
+      `).join('');
+    }
+
+    // =========================================================================
+    // 8. TAB 3：克制查詢 (Matchup / Counter Finder)
+    // =========================================================================
+    function renderCounterPresets() {
+      const container = document.getElementById('counter-presets');
+      container.innerHTML = COUNTER_PRESETS.map(p => {
+        const active = !state.counterCustomQuery && state.activeCounterPreset === p.label;
+        const cls = active
+          ? 'bg-imperial-500 text-obsidian-950 border-imperial-400 font-bold shadow'
+          : 'bg-obsidian-900 text-slate-300 border-slate-700 hover:border-imperial-500/60 hover:text-imperial-400';
+        return `<button onclick="selectCounterPreset('${p.label}')" class="px-3 py-1.5 rounded-xl text-xs border transition ${cls}">${p.label}</button>`;
+      }).join('');
+    }
+
+    function selectCounterPreset(label) {
+      state.activeCounterPreset = label;
+      state.counterCustomQuery = '';
+      document.getElementById('counter-input').value = '';
+      renderCounterPresets();
+      renderCounterView();
+    }
+
+    function handleCounterInput() {
+      const val = document.getElementById('counter-input').value.trim();
+      state.counterCustomQuery = val;
+      renderCounterPresets();
+      renderCounterView();
+    }
+
+    function clearCounterSearch() {
+      state.counterCustomQuery = '';
+      state.activeCounterPreset = '';
+      document.getElementById('counter-input').value = '';
+      renderCounterPresets();
+      renderCounterView();
+    }
+
+    function highlightTerms(text, terms, colorClass) {
+      let result = escapeHtml(text);
+      terms.forEach(term => {
+        if (!term) return;
+        const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${escapedTerm})`, 'gi');
+        result = result.replace(regex, `<mark class="${colorClass} px-1 rounded font-bold">$1</mark>`);
+      });
+      return result;
+    }
+
+    function renderCounterView() {
+      let terms = [];
+      if (state.counterCustomQuery) {
+        terms = state.counterCustomQuery.split(/[/\s、,，]+/).map(s => s.trim()).filter(Boolean);
+      } else if (state.activeCounterPreset) {
+        const preset = COUNTER_PRESETS.find(p => p.label === state.activeCounterPreset);
+        if (preset) terms = preset.terms;
+      }
+
+      const advListEl = document.getElementById('counter-adv-list');
+      const disListEl = document.getElementById('counter-dis-list');
+      const advCountEl = document.getElementById('counter-adv-count');
+      const disCountEl = document.getElementById('counter-dis-count');
+
+      if (terms.length === 0) {
+        advCountEl.textContent = '0 隊';
+        disCountEl.textContent = '0 隊';
+        const placeholder = '<div class="text-sm text-slate-500 text-center py-8">請點選上方熱門目標或輸入關鍵字進行查詢</div>';
+        advListEl.innerHTML = placeholder;
+        disListEl.innerHTML = placeholder;
+        return;
+      }
+
+      const matchesAny = (text) => terms.some(term => text.toLowerCase().includes(term.toLowerCase()));
+
+      const advTeams = TEAMS.filter(t => matchesAny(t.advantage))
+        .sort((a, b) => (TIER_ORDER[a.tier] || 99) - (TIER_ORDER[b.tier] || 99));
+      const disTeams = TEAMS.filter(t => matchesAny(t.disadvantage))
+        .sort((a, b) => (TIER_ORDER[a.tier] || 99) - (TIER_ORDER[b.tier] || 99));
+
+      advCountEl.textContent = `${advTeams.length} 隊`;
+      disCountEl.textContent = `${disTeams.length} 隊`;
+
+      const renderCard = (t, isAdv) => `
+        <div onclick="openDetailModal(${t.id})" class="cursor-pointer bg-obsidian-900/90 hover:bg-obsidian-700/60 border border-slate-700/70 hover:border-imperial-500/50 rounded-xl p-3.5 transition space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-2 py-0.5 rounded text-[11px] font-extrabold ${getTierStyle(t.tier)}">${t.tier}</span>
+              <span class="font-bold text-slate-100 text-sm">${escapeHtml(t.name)}</span>
+              <span class="text-[11px] text-slate-400">(${escapeHtml(t.formation)})</span>
+            </div>
+            <span class="text-[11px] text-imperial-400 shrink-0">詳情 →</span>
+          </div>
+          <div class="text-xs text-slate-400">
+            ${escapeHtml(t.wujiang1)} / ${escapeHtml(t.wujiang2)} / ${escapeHtml(t.wujiang3)}
+          </div>
+          <div class="text-xs leading-relaxed text-slate-200 bg-obsidian-800/80 rounded-lg p-2.5 border ${isAdv ? 'border-jade-500/20' : 'border-crimson-500/20'}">
+            ${isAdv
+              ? highlightTerms(t.advantage, terms, 'bg-jade-500/30 text-jade-300')
+              : highlightTerms(t.disadvantage, terms, 'bg-crimson-500/30 text-crimson-300')
+            }
+          </div>
+        </div>
+      `;
+
+      advListEl.innerHTML = advTeams.length
+        ? advTeams.map(t => renderCard(t, true)).join('')
+        : '<div class="text-sm text-slate-500 text-center py-8">資料庫中無明確標註優勢克制該目標的陣容</div>';
+
+      disListEl.innerHTML = disTeams.length
+        ? disTeams.map(t => renderCard(t, false)).join('')
+        : '<div class="text-sm text-slate-500 text-center py-8">資料庫中無明確標註劣勢怕打該目標的陣容</div>';
+    }
+
+    // =========================================================================
+    // 9. TAB 4：統計總覽 (Meta Analytics Dashboard)
+    // =========================================================================
+    function jumpToExplorerFilter(type, value) {
+      resetAllFilters();
+      if (type === 'formation') {
+        document.getElementById('filter-formation').value = value;
+        state.formation = value;
+      } else if (type === 'tier') {
+        state.tier = value;
+        renderTierPills();
+      } else if (type === 'source') {
+        document.getElementById('filter-source').value = value;
+        state.source = value;
+      } else if (type === 'skill') {
+        document.getElementById('search-input').value = value;
+        state.search = value;
+        document.getElementById('clear-search-btn').classList.remove('hidden');
+      }
+      renderExplorer();
+      switchTab('explorer');
+      showToast(`已篩選：${value}`, 'info');
+    }
+
+    function renderAnalyticsView() {
+      // 動態計算 KPI
+      const total = TEAMS.length;
+      const multi = TEAMS.filter(t => t.isConsensus).length;
+      const single = total - multi;
+      document.getElementById('kpi-total').textContent = total;
+      document.getElementById('kpi-multi').textContent = multi;
+      document.getElementById('kpi-single').textContent = single;
+      document.getElementById('kpi-sources').textContent = ALL_SOURCES.length;
+
+      // 1. 陣型分佈
+      const formCounts = {};
+      TEAMS.forEach(t => { formCounts[t.formation] = (formCounts[t.formation] || 0) + 1; });
+      const formArr = Object.entries(formCounts).sort((a, b) => b[1] - a[1]);
+      const maxForm = formArr[0][1];
+
+      document.getElementById('chart-formation').innerHTML = formArr.map(([name, count]) => {
+        const pct = Math.round((count / maxForm) * 100);
+        return `
+          <button onclick="jumpToExplorerFilter('formation', '${name}')" class="w-full text-left group space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="font-semibold text-slate-200 group-hover:text-imperial-400 transition">${name}</span>
+              <span class="text-slate-400 font-mono">${count} 隊（${Math.round(count / total * 100)}%）</span>
+            </div>
+            <div class="w-full h-2.5 bg-obsidian-900 rounded-full overflow-hidden border border-slate-700/60">
+              <div class="bar-fill h-full bg-gradient-to-r from-imperial-600 to-imperial-400 group-hover:brightness-110 rounded-full" style="width: ${pct}%"></div>
+            </div>
+          </button>
+        `;
+      }).join('');
+
+      // 2. 強度梯隊分佈
+      const tierCounts = {};
+      TIER_LIST.slice(1).forEach(tr => { tierCounts[tr] = 0; });
+      TEAMS.forEach(t => { tierCounts[t.tier] = (tierCounts[t.tier] || 0) + 1; });
+      const tierArr = Object.entries(tierCounts);
+      const maxTier = Math.max(...tierArr.map(x => x[1]));
+
+      const tierBarColor = {
+        'T0.3': 'from-crimson-500 to-imperial-400',
+        'T0.5': 'from-imperial-600 to-imperial-400',
+        'T0.5+': 'from-amber-600 to-amber-400',
+        'T0.8': 'from-sky-600 to-sky-400',
+        'T0.8+': 'from-teal-600 to-teal-400',
+        'T1': 'from-slate-600 to-slate-400'
+      };
+
+      document.getElementById('chart-tier').innerHTML = tierArr.map(([name, count]) => {
+        const pct = Math.round((count / maxTier) * 100);
+        return `
+          <button onclick="jumpToExplorerFilter('tier', '${name}')" class="w-full text-left group space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="font-bold text-slate-200 group-hover:text-imperial-400 transition">${name}</span>
+              <span class="text-slate-400 font-mono">${count} 隊（${Math.round(count / total * 100)}%）</span>
+            </div>
+            <div class="w-full h-2.5 bg-obsidian-900 rounded-full overflow-hidden border border-slate-700/60">
+              <div class="bar-fill h-full bg-gradient-to-r ${tierBarColor[name] || 'from-slate-600 to-slate-400'} rounded-full" style="width: ${pct}%"></div>
+            </div>
+          </button>
+        `;
+      }).join('');
+
+      // 3. 各資料來源收錄陣容數
+      const sourceArr = ALL_SOURCES.map(src => ({
+        name: src,
+        count: TEAMS.filter(t => t.sources.includes(src)).length
+      })).sort((a, b) => b.count - a.count);
+      const maxSrc = sourceArr[0].count;
+
+      document.getElementById('chart-source').innerHTML = sourceArr.map(s => {
+        const pct = Math.round((s.count / maxSrc) * 100);
+        return `
+          <button onclick="jumpToExplorerFilter('source', '${s.name}')" class="w-full text-left group space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="font-semibold text-slate-200 group-hover:text-sky-400 transition">${s.name}</span>
+              <span class="text-slate-400 font-mono">收錄 ${s.count} 隊</span>
+            </div>
+            <div class="w-full h-3 bg-obsidian-900 rounded-full overflow-hidden border border-slate-700/60">
+              <div class="bar-fill h-full bg-gradient-to-r from-sky-600 to-jade-400 group-hover:brightness-110 rounded-full" style="width: ${pct}%"></div>
+            </div>
+          </button>
+        `;
+      }).join('');
+
+      // 4. 高頻通用戰法 TOP 18
+      const maxSkill = TOP_18_SKILLS[0].count;
+      document.getElementById('chart-skills').innerHTML = TOP_18_SKILLS.map((sk, idx) => {
+        const pct = Math.round((sk.count / maxSkill) * 100);
+        return `
+          <button onclick="jumpToExplorerFilter('skill', '${sk.name}')" class="w-full text-left group space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="font-medium text-slate-200 group-hover:text-imperial-400 transition">
+                <span class="text-slate-500 font-mono mr-1">${String(idx + 1).padStart(2, '0')}.</span>${sk.name}
+              </span>
+              <span class="text-imperial-400 font-mono font-bold">${sk.count}</span>
+            </div>
+            <div class="w-full h-2 bg-obsidian-900 rounded-full overflow-hidden border border-slate-700/50">
+              <div class="bar-fill h-full bg-gradient-to-r from-amber-600 to-imperial-400 group-hover:brightness-110 rounded-full" style="width: ${pct}%"></div>
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    // 啟動應用程式
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
