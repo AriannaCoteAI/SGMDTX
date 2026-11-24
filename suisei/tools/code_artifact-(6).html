@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>《三國：謀定天下》同盟精鐵與攻城排程計算機</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter, Noto Sans TC, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans TC"', 'Inter', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            obsidian: {
+              950: '#090d14',
+              900: '#0e141f',
+              850: '#131b29',
+              800: '#182234',
+              700: '#233047',
+            },
+            imperial: {
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    /* Custom subtle dark scrollbar and datetime-local icon invert */
+    body {
+      background-color: #090d14;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(217, 119, 6, 0.12), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(30, 58, 138, 0.12), transparent);
+      color: #e2e8f0;
+    }
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.85) sepia(0.3) saturate(2) hue-rotate(10deg);
+      cursor: pointer;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0e141f;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2b3a55;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #d97706;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body class="min-h-screen antialiased selection:bg-amber-500/30 selection:text-amber-200">
+  <!-- Main Application Container -->
+  <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-8 space-y-6">
+
+    <!-- Header Banner -->
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-amber-500/20 pb-5">
+      <div class="flex items-start sm:items-center gap-3.5">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/25 to-amber-700/10 border border-amber-500/40 flex items-center justify-center shrink-0 shadow-lg shadow-amber-900/20">
+          <!-- Tactical Shield SVG -->
+          <svg class="w-7 h-7 text-amber-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4"/>
+          </svg>
+        </div>
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-2 py-0.5 text-xs font-semibold tracking-wider uppercase rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30">同盟指揮官戰術工具</span>
+            <span class="text-xs text-slate-400 font-mono">S1 / 陳倉之圍規則適用</span>
+          </div>
+          <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-slate-100 mt-1">
+            《三國：謀定天下》同盟精鐵與攻城排程計算機
+          </h1>
+        </div>
+      </div>
+      <!-- Quick Status Pill -->
+      <div class="flex items-center gap-2 self-start md:self-center bg-obsidian-850/90 border border-slate-700/60 rounded-xl px-3.5 py-2 text-xs text-slate-300">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>攻城大營上限：<strong class="text-amber-300">2 座</strong>｜建造：<strong class="text-amber-300">60 分鐘</strong></span>
+      </div>
+    </header>
+
+    <!-- Section 1: Top Dashboard / Input Panel -->
+    <section class="bg-obsidian-900/90 border border-slate-700/60 rounded-2xl p-4 sm:p-6 shadow-xl shadow-black/40 space-y-5">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h2 class="text-base sm:text-lg font-semibold text-amber-300 flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
+          </svg>
+          同盟精鐵戰情儀表板
+        </h2>
+        <span class="text-xs text-slate-400">所有數值變更皆即時連動下方排程</span>
+      </div>
+
+      <!-- 4-Column Inputs Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Current Refined Iron -->
+        <div class="bg-obsidian-850 border border-slate-700/60 rounded-xl p-4 flex flex-col justify-between">
+          <label for="currentIron" class="text-xs font-medium text-slate-400 flex items-center justify-between">
+            <span>當前同盟精鐵</span>
+            <span class="text-amber-400/80 font-mono" id="storagePercentLabel">7.2%</span>
+          </label>
+          <input
+            type="number"
+            id="currentIron"
+            min="0"
+            step="1"
+            value="216"
+            class="mt-2 w-full bg-obsidian-950 border border-slate-600/70 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-lg px-3 py-2 text-xl font-bold font-mono text-slate-100 outline-none tabular-nums"
+          />
+          <!-- Mini storage progress bar -->
+          <div class="mt-3 w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+            <div id="storageProgressBar" class="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-300" style="width: 7.2%"></div>
+          </div>
+        </div>
+
+        <!-- Storage Cap -->
+        <div class="bg-obsidian-850 border border-slate-700/60 rounded-xl p-4 flex flex-col justify-between">
+          <label for="storageCap" class="text-xs font-medium text-slate-400">精鐵上限 (倉庫容量)</label>
+          <input
+            type="number"
+            id="storageCap"
+            min="500"
+            step="100"
+            value="3000"
+            class="mt-2 w-full bg-obsidian-950 border border-slate-600/70 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-lg px-3 py-2 text-xl font-bold font-mono text-slate-100 outline-none tabular-nums"
+          />
+          <div class="mt-2.5 flex flex-wrap gap-1.5">
+            <button type="button" data-cap="3000" class="cap-preset-btn px-2 py-1 text-xs font-mono rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition">3000</button>
+            <button type="button" data-cap="6000" class="cap-preset-btn px-2 py-1 text-xs font-mono rounded-md bg-obsidian-950 text-slate-300 border border-slate-700 hover:border-amber-500/50 transition">6000</button>
+            <button type="button" data-cap="9000" class="cap-preset-btn px-2 py-1 text-xs font-mono rounded-md bg-obsidian-950 text-slate-300 border border-slate-700 hover:border-amber-500/50 transition">9000</button>
+            <button type="button" id="customCapFocusBtn" class="px-2 py-1 text-xs rounded-md bg-obsidian-950 text-slate-400 border border-slate-700 hover:text-slate-200 transition">自訂</button>
+          </div>
+        </div>
+
+        <!-- Hourly Production Rate -->
+        <div class="bg-obsidian-850 border border-slate-700/60 rounded-xl p-4 flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <label for="hourlyRate" class="text-xs font-medium text-slate-400">精鐵產量 / 小時</label>
+            <button type="button" id="toggleRateHelperBtn" class="text-xs text-amber-400 hover:text-amber-300 underline underline-offset-2 transition">
+              展開明細試算
+            </button>
+          </div>
+          <div class="relative mt-2">
+            <input
+              type="number"
+              id="hourlyRate"
+              min="0"
+              max="300"
+              step="1"
+              value="30"
+              class="w-full bg-obsidian-950 border border-slate-600/70 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-lg px-3 py-2 pr-14 text-xl font-bold font-mono text-emerald-400 outline-none tabular-nums"
+            />
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono">/ 時</span>
+          </div>
+          <div id="rateCapWarning" class="hidden mt-2 text-xs text-rose-400 flex items-center gap-1">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+            <span>同盟總產量上限為 160/時，計算已依 160/時 封頂</span>
+          </div>
+          <div id="rateNormalHint" class="mt-2 text-xs text-slate-400">
+            鐵礦場加成上限 +40｜總產量上限 160/時
+          </div>
+        </div>
+
+        <!-- Base Time -->
+        <div class="bg-obsidian-850 border border-slate-700/60 rounded-xl p-4 flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <label for="baseTime" class="text-xs font-medium text-slate-400">基準時間 (本地)</label>
+            <button type="button" id="resetNowBtn" class="px-2 py-0.5 text-xs rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition">
+              重設為現在
+            </button>
+          </div>
+          <input
+            type="datetime-local"
+            id="baseTime"
+            class="mt-2 w-full bg-obsidian-950 border border-slate-600/70 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-lg px-2.5 py-2 text-sm font-mono text-slate-100 outline-none"
+          />
+          <p class="mt-2 text-xs text-slate-400">所有排程皆以此時間點起算</p>
+        </div>
+      </div>
+
+      <!-- Expandable Production Rate Helper -->
+      <div id="rateHelperPanel" class="hidden bg-obsidian-950/90 border border-amber-500/30 rounded-xl p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-semibold text-amber-300">產量組成試算小幫手</h3>
+          <span class="text-xs text-slate-400">輸入後自動加總至上方「精鐵產量 / 小時」</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+          <div>
+            <label for="allianceBaseRate" class="block text-xs text-slate-400 mb-1">同盟基礎產出 (+/時)</label>
+            <input type="number" id="allianceBaseRate" min="0" value="30" class="w-full bg-obsidian-850 border border-slate-600/70 focus:border-amber-500 rounded-lg px-3 py-2 text-sm font-mono text-slate-100 outline-none" />
+          </div>
+          <div>
+            <label for="forgingMineRate" class="block text-xs text-slate-400 mb-1">城池鍛冶 / 鐵礦場加成 (鐵礦場上限 +40)</label>
+            <input type="number" id="forgingMineRate" min="0" value="0" class="w-full bg-obsidian-850 border border-slate-600/70 focus:border-amber-500 rounded-lg px-3 py-2 text-sm font-mono text-slate-100 outline-none" />
+          </div>
+          <div class="bg-obsidian-850/80 border border-slate-700/60 rounded-lg px-3 py-2 flex items-center justify-between">
+            <span class="text-xs text-slate-400">加總有效產出</span>
+            <span id="helperSumDisplay" class="text-base font-bold font-mono text-emerald-400">+30 / 時</span>
+          </div>
+        </div>
+        <p id="mineCapNotice" class="hidden text-xs text-amber-400">
+          提醒：9 級以上城池建造之【鐵礦場】加成上限為 +40/時，請確認您輸入的加成包含城池【鍛冶】效果。
+        </p>
+      </div>
+
+      <!-- Live Overflow / Full Storage Readout Card -->
+      <div id="fullStorageCard" class="rounded-xl p-4 border bg-gradient-to-r from-obsidian-850 via-obsidian-850 to-amber-950/25 border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div id="fullStorageIconBox" class="w-10 h-10 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs text-slate-400">距離滿倉時間（避免精鐵溢出浪費）</div>
+            <div id="fullStorageMainText" class="text-base sm:text-lg font-bold text-slate-100 font-mono tabular-nums mt-0.5">--</div>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-3 text-xs sm:text-sm">
+          <div class="bg-obsidian-950/80 border border-slate-700/60 rounded-lg px-3 py-1.5">
+            <span class="text-slate-400">尚餘空間：</span>
+            <span id="remainingSpaceText" class="font-mono font-semibold text-amber-300 tabular-nums">--</span>
+          </div>
+          <div class="bg-obsidian-950/80 border border-slate-700/60 rounded-lg px-3 py-1.5">
+            <span class="text-slate-400">預計滿倉時刻：</span>
+            <span id="fullStorageDateText" class="font-mono font-semibold text-sky-300 tabular-nums">--</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Tactical Modifiers Bar -->
+    <section class="bg-obsidian-900/90 border border-slate-700/60 rounded-2xl p-4 sm:p-5 shadow-lg shadow-black/30 space-y-4">
+      <!-- Top Row: 3-Tier Chain Penalty Controls -->
+      <div class="space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-sm font-semibold text-amber-300 flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/></svg>
+              跳城（未連官道）設定
+            </span>
+            <span class="text-xs text-slate-400">依跨越之城池/關卡等級區間分別累計</span>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <span class="text-xs sm:text-sm text-slate-300">
+              目前跳城額外消耗：<strong id="totalSkipPenaltyDisplay" class="font-mono text-amber-400 tabular-nums">+0</strong> <span class="text-xs text-slate-400">精鐵</span>
+            </span>
+            <button type="button" id="resetSkipBtn" class="px-2.5 py-1 text-xs rounded-lg bg-obsidian-950 text-slate-300 border border-slate-700 hover:border-amber-500/50 hover:text-amber-300 transition">
+              歸零
+            </button>
+          </div>
+        </div>
+
+        <!-- Three Independent Level-Tier Steppers -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- Tier 1: 4-8級 (+500) -->
+          <div class="flex items-center justify-between bg-obsidian-850 border border-slate-700/70 rounded-xl px-3.5 py-2.5">
+            <div>
+              <div class="text-sm font-semibold text-slate-100">4–8 級城 / 關卡</div>
+              <div class="text-xs font-mono text-amber-400/90">每座 +500 精鐵</div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button type="button" data-skip-tier="low" data-delta="-1" class="skip-step-btn w-8 h-8 rounded-lg bg-obsidian-950 border border-slate-600 text-slate-200 hover:border-amber-500 hover:text-amber-300 font-bold flex items-center justify-center transition disabled:opacity-35" aria-label="減少4-8級跳城數">−</button>
+              <span id="skipLowDisplay" class="w-7 text-center font-mono font-bold text-amber-300 text-base tabular-nums">0</span>
+              <button type="button" data-skip-tier="low" data-delta="1" class="skip-step-btn w-8 h-8 rounded-lg bg-obsidian-950 border border-slate-600 text-slate-200 hover:border-amber-500 hover:text-amber-300 font-bold flex items-center justify-center transition" aria-label="增加4-8級跳城數">+</button>
+            </div>
+          </div>
+
+          <!-- Tier 2: 9-12級 (+1500) -->
+          <div class="flex items-center justify-between bg-obsidian-850 border border-slate-700/70 rounded-xl px-3.5 py-2.5">
+            <div>
+              <div class="text-sm font-semibold text-slate-100">9–12 級城 / 關卡</div>
+              <div class="text-xs font-mono text-amber-400/90">每座 +1,500 精鐵</div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button type="button" data-skip-tier="mid" data-delta="-1" class="skip-step-btn w-8 h-8 rounded-lg bg-obsidian-950 border border-slate-600 text-slate-200 hover:border-amber-500 hover:text-amber-300 font-bold flex items-center justify-center transition disabled:opacity-35" aria-label="減少9-12級跳城數">−</button>
+              <span id="skipMidDisplay" class="w-7 text-center font-mono font-bold text-amber-300 text-base tabular-nums">0</span>
+              <button type="button" data-skip-tier="mid" data-delta="1" class="skip-step-btn w-8 h-8 rounded-lg bg-obsidian-950 border border-slate-600 text-slate-200 hover:border-amber-500 hover:text-amber-300 font-bold flex items-center justify-center transition" aria-label="增加9-12級跳城數">+</button>
+            </div>
+          </div>
+
+          <!-- Tier 3: 13-20級 (+3000) -->
+          <div class="flex items-center justify-between bg-obsidian-850 border border-slate-700/70 rounded-xl px-3.5 py-2.5">
+            <div>
+              <div class="text-sm font-semibold text-slate-100">13–20 級城 / 關卡</div>
+              <div class="text-xs font-mono text-amber-400/90">每座 +3,000 精鐵</div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button type="button" data-skip-tier="high" data-delta="-1" class="skip-step-btn w-8 h-8 rounded-lg bg-obsidian-950 border border-slate-600 text-slate-200 hover:border-amber-500 hover:text-amber-300 font-bold flex items-center justify-center transition disabled:opacity-35" aria-label="減少13-20級跳城數">−</button>
+              <span id="skipHighDisplay" class="w-7 text-center font-mono font-bold text-amber-300 text-base tabular-nums">0</span>
+              <button type="button" data-skip-tier="high" data-delta="1" class="skip-step-btn w-8 h-8 rounded-lg bg-obsidian-950 border border-slate-600 text-slate-200 hover:border-amber-500 hover:text-amber-300 font-bold flex items-center justify-center transition" aria-label="增加13-20級跳城數">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row: Other Birth State + Timing Buffers -->
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-3 border-t border-slate-800">
+        <!-- Other Birth State Toggle -->
+        <label class="flex items-center gap-2.5 bg-obsidian-850 border border-slate-700/70 rounded-xl px-3.5 py-2 cursor-pointer select-none hover:border-amber-500/40 transition self-start">
+          <input type="checkbox" id="otherBirthState" class="w-4 h-4 rounded accent-amber-500 cursor-pointer" />
+          <span class="text-sm font-medium text-slate-200">進攻其他出生州 <span class="text-rose-400 font-mono text-xs">(+50% 總量)</span></span>
+        </label>
+
+        <!-- Timing Buffers -->
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="text-xs text-slate-400 font-medium">最快開打時間計入：</span>
+          <label class="flex items-center gap-2 bg-obsidian-850/70 border border-slate-700/60 rounded-lg px-3 py-1.5 cursor-pointer select-none">
+            <input type="checkbox" id="includeBuildTime" checked class="w-4 h-4 rounded accent-amber-500 cursor-pointer" />
+            <span class="text-xs sm:text-sm text-slate-200">建造大營 <span class="text-amber-300 font-mono">+1h</span></span>
+          </label>
+          <label class="flex items-center gap-2 bg-obsidian-850/70 border border-slate-700/60 rounded-lg px-3 py-1.5 cursor-pointer select-none">
+            <input type="checkbox" id="includeRallyTime" checked class="w-4 h-4 rounded accent-amber-500 cursor-pointer" />
+            <span class="text-xs sm:text-sm text-slate-200">宣戰集結 <span class="text-amber-300 font-mono">+1h</span></span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="flex flex-wrap gap-2 border-b border-slate-800 pb-1" role="tablist">
+      <button type="button" data-tab="tab-overview" class="tab-btn px-4 py-2.5 rounded-t-xl text-sm font-semibold transition flex items-center gap-2 bg-amber-500/15 text-amber-300 border-b-2 border-amber-400">
+        <span>各級城池可打時間一覽</span>
+      </button>
+      <button type="button" data-tab="tab-planner" class="tab-btn px-4 py-2.5 rounded-t-xl text-sm font-semibold transition flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 border-b-2 border-transparent">
+        <span>多城連續攻城排程器</span>
+        <span id="queueCountBadge" class="px-1.5 py-0.5 text-xs font-mono rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">0</span>
+      </button>
+      <button type="button" data-tab="tab-reference" class="tab-btn px-4 py-2.5 rounded-t-xl text-sm font-semibold transition flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 border-b-2 border-transparent">
+        <span>精鐵規則與同盟產出筆記</span>
+      </button>
+    </nav>
+
+    <!-- TAB 1: All-Levels Readiness Table -->
+    <main id="tab-overview" class="tab-panel space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> 可立即起大營</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span> 預計達標倒數</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> 超過當前上限</span>
+        </div>
+        <span>點擊「+ 加入排程」會連同目前各等級跳城數量與跨州條件帶入排程器</span>
+      </div>
+
+      <!-- Desktop Table View -->
+      <div class="hidden md:block bg-obsidian-900/90 border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-obsidian-850/90 border-b border-slate-700/70 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                <th class="py-3.5 px-4">城池等級</th>
+                <th class="py-3.5 px-4">精鐵需求 (明細)</th>
+                <th class="py-3.5 px-4">狀態 / 尚缺精鐵</th>
+                <th class="py-3.5 px-4">精鐵達標時間 (可起大營)</th>
+                <th class="py-3.5 px-4">最快開打時間</th>
+                <th class="py-3.5 px-4 text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody id="overviewTableBody" class="divide-y divide-slate-800/80 text-sm">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mobile Cards View -->
+      <div id="overviewMobileCards" class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:hidden">
+        <!-- Populated by JS -->
+      </div>
+    </main>
+
+    <!-- TAB 2: Multi-City Queue Planner -->
+    <section id="tab-planner" class="tab-panel hidden space-y-5">
+      <!-- Quick-Add Bar -->
+      <div class="bg-obsidian-900/90 border border-slate-700/60 rounded-2xl p-4 sm:p-5 space-y-3.5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="text-sm sm:text-base font-semibold text-amber-300">快速新增攻城目標</h3>
+          <div class="flex items-center gap-2">
+            <button type="button" id="clearQueueBtn" class="px-3 py-1.5 text-xs rounded-lg bg-obsidian-850 text-slate-400 border border-slate-700 hover:text-rose-400 hover:border-rose-500/40 transition">
+              清空排程
+            </button>
+            <button type="button" id="copyAnnouncementBtn" class="px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-lg bg-gradient-to-r from-amber-600 to-amber-500 text-obsidian-950 hover:from-amber-500 hover:to-amber-400 shadow-md shadow-amber-900/30 transition flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              複製公告文字 (LINE / Discord)
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-end">
+          <div class="lg:col-span-2">
+            <label for="quickCityLevel" class="block text-xs text-slate-400 mb-1">目標城池等級</label>
+            <select id="quickCityLevel" class="w-full bg-obsidian-950 border border-slate-600/70 focus:border-amber-500 rounded-lg px-2.5 py-2 text-sm text-slate-100 outline-none">
+              <!-- Populated by JS -->
+            </select>
+          </div>
+          <div class="lg:col-span-2">
+            <label for="quickCityName" class="block text-xs text-slate-400 mb-1">城池名稱 (選填)</label>
+            <input type="text" id="quickCityName" placeholder="例：陳倉、許昌" class="w-full bg-obsidian-950 border border-slate-600/70 focus:border-amber-500 rounded-lg px-2.5 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-600" />
+          </div>
+          <div class="lg:col-span-4 grid grid-cols-3 gap-2">
+            <div>
+              <label for="quickSkipLow" class="block text-[11px] text-slate-400 mb-1 truncate">跳4-8級(+500)</label>
+              <input type="number" id="quickSkipLow" min="0" max="20" value="0" class="w-full bg-obsidian-950 border border-slate-600/70 focus:border-amber-500 rounded-lg px-2 py-2 text-sm font-mono text-center text-amber-300 outline-none" />
+            </div>
+            <div>
+              <label for="quickSkipMid" class="block text-[11px] text-slate-400 mb-1 truncate">跳9-12(+1500)</label>
+              <input type="number" id="quickSkipMid" min="0" max="20" value="0" class="w-full bg-obsidian-950 border border-slate-600/70 focus:border-amber-500 rounded-lg px-2 py-2 text-sm font-mono text-center text-amber-300 outline-none" />
+            </div>
+            <div>
+              <label for="quickSkipHigh" class="block text-[11px] text-slate-400 mb-1 truncate">跳13-20(+3000)</label>
+              <input type="number" id="quickSkipHigh" min="0" max="20" value="0" class="w-full bg-obsidian-950 border border-slate-600/70 focus:border-amber-500 rounded-lg px-2 py-2 text-sm font-mono text-center text-amber-300 outline-none" />
+            </div>
+          </div>
+          <div class="lg:col-span-2 flex items-center h-[38px]">
+            <label class="flex items-center gap-2 cursor-pointer select-none text-xs sm:text-sm text-slate-200">
+              <input type="checkbox" id="quickOtherState" class="w-4 h-4 rounded accent-amber-500 cursor-pointer" />
+              <span>跨出生州 (+50%)</span>
+            </label>
+          </div>
+          <div class="lg:col-span-2">
+            <button type="button" id="quickAddBtn" class="w-full py-2 px-4 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-semibold text-sm transition">
+              + 加入排程
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Queue Timeline List -->
+      <div id="plannerListContainer" class="space-y-3">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Announcement Preview Box -->
+      <div id="announcementPreviewBox" class="hidden bg-obsidian-900/90 border border-slate-700/60 rounded-2xl p-4 sm:p-5 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs font-semibold uppercase tracking-wider text-amber-400">攻城公告預覽 (可直接貼至 LINE / Discord)</h4>
+          <button type="button" id="copyPreviewBtn" class="text-xs text-sky-400 hover:text-sky-300 underline underline-offset-2">再複製一次</button>
+        </div>
+        <pre id="announcementPreviewText" class="bg-obsidian-950 border border-slate-800 rounded-xl p-3.5 text-xs sm:text-sm font-sans text-slate-200 whitespace-pre-wrap leading-relaxed overflow-x-auto"></pre>
+      </div>
+    </section>
+
+    <!-- TAB 3: Reference & Local Notes -->
+    <section id="tab-reference" class="tab-panel hidden space-y-6">
+      <!-- Reference Rules Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <!-- Refined Iron Sources Card -->
+        <div class="bg-obsidian-900/90 border border-slate-700/60 rounded-2xl p-5 space-y-4">
+          <h3 class="text-base font-bold text-amber-300 flex items-center gap-2 border-b border-slate-800 pb-3">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 5.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"/></svg>
+            所有同盟精鐵來源與上限機制
+          </h3>
+          <ul class="space-y-3 text-sm text-slate-300 leading-relaxed">
+            <li class="flex items-start gap-2.5">
+              <span class="px-1.5 py-0.5 text-xs font-mono rounded bg-amber-500/20 text-amber-300 mt-0.5">1</span>
+              <div><strong class="text-slate-100">同盟等級基礎產出：</strong>隨同盟等級提升而增加每小時基礎精鐵產量（例如 5 級盟基礎為 +30/時）。</div>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="px-1.5 py-0.5 text-xs font-mono rounded bg-amber-500/20 text-amber-300 mt-0.5">2</span>
+              <div><strong class="text-slate-100">城池與據點【鍛冶】發展方向：</strong>占領城池與其下屬據點後，於城池發展方向啟用【鍛冶】效果即可持續增加同盟精鐵產出。</div>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="px-1.5 py-0.5 text-xs font-mono rounded bg-amber-500/20 text-amber-300 mt-0.5">3</span>
+              <div><strong class="text-slate-100">9 級城以上【鐵礦場】建築：</strong>在 9 級及以上城池建造鐵礦場可額外提升精鐵產量，<span class="text-amber-300 font-semibold">鐵礦場加成上限為 +40/時</span>。</div>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="px-1.5 py-0.5 text-xs font-mono rounded bg-sky-500/20 text-sky-300 mt-0.5">上限</span>
+              <div><strong class="text-slate-100">同盟精鐵總產量封頂：</strong>各項來源加總後，<span class="text-sky-300 font-semibold">總產量最高上限為 160/時</span>。</div>
+            </li>
+            <li class="flex items-start gap-2.5 bg-rose-950/30 border border-rose-500/30 rounded-xl p-3">
+              <span class="px-1.5 py-0.5 text-xs font-mono rounded bg-rose-500/20 text-rose-300 mt-0.5">警告</span>
+              <div class="text-rose-200/90"><strong class="text-rose-300">低活躍度扣負機制：</strong>若同盟處於低活躍狀態，同盟精鐵會出現<strong class="underline">倒扣（負值）</strong>情況，請管理層務必維持同盟活躍度。</div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Siege Camp & Chain Rules Card -->
+        <div class="bg-obsidian-900/90 border border-slate-700/60 rounded-2xl p-5 space-y-4">
+          <h3 class="text-base font-bold text-amber-300 flex items-center gap-2 border-b border-slate-800 pb-3">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M4 18h16M6 18V9l6-4 6 4v9M10 18v-5h4v5"/></svg>
+            攻城大營與連城消耗規則
+          </h3>
+          <ul class="space-y-2.5 text-sm text-slate-300 leading-relaxed">
+            <li class="flex items-start gap-2">
+              <span class="text-amber-400">▸</span>
+              <div><strong class="text-slate-100">數量與時間：</strong>同盟最多同時擁有 <strong class="text-emerald-400">2 個</strong>攻城大營；建造時間與拆除時間皆為 <strong class="text-amber-300">60 分鐘</strong>。</div>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-amber-400">▸</span>
+              <div><strong class="text-slate-100">不可中止建造：</strong>攻城大營一旦開建即<strong class="text-rose-300">無法中止</strong>，拆除或取消皆不返還已消耗精鐵。</div>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-amber-400">▸</span>
+              <div><strong class="text-slate-100">屬性與預約：</strong>占地 4+3+4 格、補給範圍 12 格、建造中耐久 10,000（完工 20,000）。攻城倒數超過 1 小時可使用「預約」指令自動集結。</div>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-amber-400">▸</span>
+              <div>
+                <strong class="text-slate-100">連城機制（陳倉之圍解鎖）：</strong>目標城池或關卡未透過「官道」與己方城池相連時，依跨越之城池/關卡等級區間分別累計精鐵：
+                <div class="mt-1.5 flex flex-wrap gap-2 font-mono text-xs">
+                  <span class="px-2 py-1 rounded bg-obsidian-850 border border-slate-700 text-amber-300">4-8級：+500/座</span>
+                  <span class="px-2 py-1 rounded bg-obsidian-850 border border-slate-700 text-amber-300">9-12級：+1500/座</span>
+                  <span class="px-2 py-1 rounded bg-obsidian-850 border border-slate-700 text-amber-300">13-20級：+3000/座</span>
+                </div>
+              </div>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-amber-400">▸</span>
+              <div><strong class="text-slate-100">跨出生州懲罰：</strong>進攻其他出生州的城池時，建造攻城大營額外消耗總精鐵量的 <strong class="text-rose-400">+50%</strong>（無條件進位）。</div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Alliance Level Production LocalStorage Log -->
+      <div class="bg-obsidian-900/90 border border-slate-700/60 rounded-2xl p-5 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+          <div>
+            <h3 class="text-base font-bold text-amber-300">同盟等級對應產出實測筆記 (自動儲存於本機)</h3>
+            <p class="text-xs text-slate-400 mt-0.5">各賽季或改版可能微調數值，盟主可在此紀錄貴盟實測之「同盟等級 → 每小時基礎產出」，並一鍵套用至計算機。</p>
+          </div>
+          <button type="button" id="resetNotesDefaultBtn" class="self-start sm:self-center px-3 py-1.5 text-xs rounded-lg bg-obsidian-850 text-slate-400 border border-slate-700 hover:text-amber-300 transition">
+            恢復預設紀錄
+          </button>
+        </div>
+
+        <!-- Add Note Form -->
+        <form id="addNoteForm" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end bg-obsidian-850/70 p-3.5 rounded-xl border border-slate-700/50">
+          <div class="sm:col-span-3">
+            <label for="noteLevel" class="block text-xs text-slate-400 mb-1">同盟等級 (Lv.)</label>
+            <input type="number" id="noteLevel" min="1" max="50" required placeholder="例如：6" class="w-full bg-obsidian-950 border border-slate-600/70 focus:border-amber-500 rounded-lg px-3 py-2 text-sm font-mono text-slate-100 outline-none" />
+          </div>
+          <div class="sm:col-span-3">
+            <label for="noteRate" class="block text-xs text-slate-400 mb-1">基礎產出 (+精鐵/時)</label>
+            <input type="number" id="noteRate" min="0" max="160" required placeholder="例如：35" class="w-full bg-obsidian-950 border border-slate-600/70 focus:border-amber-500 rounded-lg px-3 py-2 text-sm font-mono text-slate-100 outline-none" />
+          </div>
+          <div class="sm:col-span-4">
+            <label for="noteMemo" class="block text-xs text-slate-400 mb-1">備註 (選填)</label>
+            <input type="text" id="noteMemo" placeholder="例如：無鍛冶城池、S1 實測" class="w-full bg-obsidian-950 border border-slate-600/70 focus:border-amber-500 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-600" />
+          </div>
+          <div class="sm:col-span-2">
+            <button type="submit" class="w-full py-2 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-obsidian-950 font-semibold text-sm transition">
+              儲存紀錄
+            </button>
+          </div>
+        </form>
+
+        <!-- Saved Notes Table -->
+        <div class="overflow-x-auto rounded-xl border border-slate-800">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-obsidian-850 text-xs text-slate-400 border-b border-slate-800">
+                <th class="py-2.5 px-4">同盟等級</th>
+                <th class="py-2.5 px-4">每小時基礎產出</th>
+                <th class="py-2.5 px-4">備註</th>
+                <th class="py-2.5 px-4 text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody id="notesTableBody" class="divide-y divide-slate-800/80">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center text-xs text-slate-500 pt-4 pb-8 border-t border-slate-800/70">
+      《三國：謀定天下》同盟戰術輔助工具｜所有排程與筆記皆儲存於瀏覽器本機，不回傳任何資料。
+    </footer>
+  </div>
+
+  <!-- Toast Notification Container (No alert()/confirm() used) -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-xs sm:max-w-sm pointer-events-none"></div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* =====================================================================
+       * 1. CORE GAME DATA & CONSTANTS
+       * ===================================================================== */
+      const CITY_LEVELS = [
+        { level: 4,  baseCost: 500 },
+        { level: 6,  baseCost: 750 },
+        { level: 8,  baseCost: 1000 },
+        { level: 9,  baseCost: 1000 },
+        { level: 10, baseCost: 1500 },
+        { level: 11, baseCost: 1500 },
+        { level: 13, baseCost: 2000 },
+        { level: 14, baseCost: 2500 },
+        { level: 15, baseCost: 2500 },
+        { level: 16, baseCost: 3000 },
+        { level: 18, baseCost: 4500 },
+        { level: 20, baseCost: 6000 },
+      ];
+
+      const MAX_PRODUCTION_CAP = 160;
+      const IRON_MINE_BONUS_CAP = 40;
+      const SKIP_PENALTIES = {
+        low: 500,   // 4–8級城池/關卡
+        mid: 1500,  // 9–12級城池/關卡
+        high: 3000, // 13–20級城池/關卡
+      };
+      const STORAGE_KEYS = {
+        QUEUE: 'sanmou_siege_queue_v2',
+        LEGACY_QUEUE: 'sanmou_siege_queue_v1',
+        NOTES: 'sanmou_alliance_iron_notes_v1',
+      };
+
+      const DEFAULT_NOTES = [
+        { level: 5, rate: 30, memo: '遊戲內截圖實測（5級同盟基礎產出）' },
+      ];
+
+      /* =====================================================================
+       * 2. APPLICATION STATE
+       * ===================================================================== */
+      const state = {
+        currentIron: 216,
+        storageCap: 3000,
+        hourlyRate: 30,
+        baseTime: new Date(),
+        skipLow: 0,   // 4-8級跳城數
+        skipMid: 0,   // 9-12級跳城數
+        skipHigh: 0,  // 13-20級跳城數
+        otherBirthState: false,
+        includeBuildTime: true,
+        includeRallyTime: true,
+        activeTab: 'tab-overview',
+        queue: [],
+        notes: [],
+      };
+
+      /* =====================================================================
+       * 3. DOM ELEMENTS
+       * ===================================================================== */
+      const el = {
+        currentIron: document.getElementById('currentIron'),
+        storageCap: document.getElementById('storageCap'),
+        storagePercentLabel: document.getElementById('storagePercentLabel'),
+        storageProgressBar: document.getElementById('storageProgressBar'),
+        capPresetBtns: document.querySelectorAll('.cap-preset-btn'),
+        customCapFocusBtn: document.getElementById('customCapFocusBtn'),
+        hourlyRate: document.getElementById('hourlyRate'),
+        rateCapWarning: document.getElementById('rateCapWarning'),
+        rateNormalHint: document.getElementById('rateNormalHint'),
+        toggleRateHelperBtn: document.getElementById('toggleRateHelperBtn'),
+        rateHelperPanel: document.getElementById('rateHelperPanel'),
+        allianceBaseRate: document.getElementById('allianceBaseRate'),
+        forgingMineRate: document.getElementById('forgingMineRate'),
+        helperSumDisplay: document.getElementById('helperSumDisplay'),
+        mineCapNotice: document.getElementById('mineCapNotice'),
+        baseTime: document.getElementById('baseTime'),
+        resetNowBtn: document.getElementById('resetNowBtn'),
+        fullStorageCard: document.getElementById('fullStorageCard'),
+        fullStorageIconBox: document.getElementById('fullStorageIconBox'),
+        fullStorageMainText: document.getElementById('fullStorageMainText'),
+        remainingSpaceText: document.getElementById('remainingSpaceText'),
+        fullStorageDateText: document.getElementById('fullStorageDateText'),
+
+        // Tactical modifiers (3-tier skipped cities)
+        skipStepBtns: document.querySelectorAll('.skip-step-btn'),
+        skipLowDisplay: document.getElementById('skipLowDisplay'),
+        skipMidDisplay: document.getElementById('skipMidDisplay'),
+        skipHighDisplay: document.getElementById('skipHighDisplay'),
+        totalSkipPenaltyDisplay: document.getElementById('totalSkipPenaltyDisplay'),
+        resetSkipBtn: document.getElementById('resetSkipBtn'),
+        otherBirthState: document.getElementById('otherBirthState'),
+        includeBuildTime: document.getElementById('includeBuildTime'),
+        includeRallyTime: document.getElementById('includeRallyTime'),
+
+        // Tabs
+        tabBtns: document.querySelectorAll('.tab-btn'),
+        tabPanels: document.querySelectorAll('.tab-panel'),
+        queueCountBadge: document.getElementById('queueCountBadge'),
+
+        // Tab 1
+        overviewTableBody: document.getElementById('overviewTableBody'),
+        overviewMobileCards: document.getElementById('overviewMobileCards'),
+
+        // Tab 2
+        quickCityLevel: document.getElementById('quickCityLevel'),
+        quickCityName: document.getElementById('quickCityName'),
+        quickSkipLow: document.getElementById('quickSkipLow'),
+        quickSkipMid: document.getElementById('quickSkipMid'),
+        quickSkipHigh: document.getElementById('quickSkipHigh'),
+        quickOtherState: document.getElementById('quickOtherState'),
+        quickAddBtn: document.getElementById('quickAddBtn'),
+        clearQueueBtn: document.getElementById('clearQueueBtn'),
+        copyAnnouncementBtn: document.getElementById('copyAnnouncementBtn'),
+        plannerListContainer: document.getElementById('plannerListContainer'),
+        announcementPreviewBox: document.getElementById('announcementPreviewBox'),
+        announcementPreviewText: document.getElementById('announcementPreviewText'),
+        copyPreviewBtn: document.getElementById('copyPreviewBtn'),
+
+        // Tab 3
+        addNoteForm: document.getElementById('addNoteForm'),
+        noteLevel: document.getElementById('noteLevel'),
+        noteRate: document.getElementById('noteRate'),
+        noteMemo: document.getElementById('noteMemo'),
+        notesTableBody: document.getElementById('notesTableBody'),
+        resetNotesDefaultBtn: document.getElementById('resetNotesDefaultBtn'),
+
+        toastContainer: document.getElementById('toastContainer'),
+      };
+
+      /* =====================================================================
+       * 4. UTILITY & CALCULATION HELPERS
+       * ===================================================================== */
+
+      /**
+       * Pad single digit with leading zero
+       */
+      function pad2(n) {
+        return String(n).padStart(2, '0');
+      }
+
+      /**
+       * Escape HTML entities to prevent XSS in dynamic strings
+       */
+      function escapeHtml(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      /**
+       * Format Date object to local datetime-local input string (YYYY-MM-DDTHH:mm)
+       */
+      function toLocalInputString(date) {
+        const d = new Date(date);
+        return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+      }
+
+      /**
+       * Format Date object to readable MM/DD HH:mm
+       */
+      function formatDateTime(date) {
+        const d = new Date(date);
+        return `${pad2(d.getMonth() + 1)}/${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+      }
+
+      /**
+       * Format hours duration into readable Chinese string (e.g. 1 天 3 小時 20 分)
+       */
+      function formatDurationHours(totalHours) {
+        if (!isFinite(totalHours) || totalHours <= 0) return '0 分鐘';
+        const totalMins = Math.ceil(totalHours * 60);
+        const days = Math.floor(totalMins / 1440);
+        const hours = Math.floor((totalMins % 1440) / 60);
+        const mins = totalMins % 60;
+        const parts = [];
+        if (days > 0) parts.push(`${days} 天`);
+        if (hours > 0) parts.push(`${hours} 小時`);
+        if (mins > 0 || parts.length === 0) parts.push(`${mins} 分`);
+        return parts.join(' ');
+      }
+
+      /**
+       * Get effective hourly production rate (capped at 160/hr)
+       */
+      function getEffectiveRate() {
+        const raw = Math.max(0, Number(state.hourlyRate) || 0);
+        return Math.min(raw, MAX_PRODUCTION_CAP);
+      }
+
+      /**
+       * Get total extra buffer hours for earliest attack time
+       */
+      function getAttackBufferHours() {
+        return (state.includeBuildTime ? 1 : 0) + (state.includeRallyTime ? 1 : 0);
+      }
+
+      /**
+       * Calculate total skip penalty across all 3 city tiers
+       */
+      function calcSkipPenalty(skipLow, skipMid, skipHigh) {
+        const l = Math.max(0, Number(skipLow) || 0);
+        const m = Math.max(0, Number(skipMid) || 0);
+        const h = Math.max(0, Number(skipHigh) || 0);
+        return l * SKIP_PENALTIES.low + m * SKIP_PENALTIES.mid + h * SKIP_PENALTIES.high;
+      }
+
+      /**
+       * Format skip tier counts into readable breakdown string
+       */
+      function formatSkipBreakdown(skipLow, skipMid, skipHigh) {
+        const parts = [];
+        if (skipLow > 0) parts.push(`4-8級×${skipLow}`);
+        if (skipMid > 0) parts.push(`9-12級×${skipMid}`);
+        if (skipHigh > 0) parts.push(`13-20級×${skipHigh}`);
+        return parts.join(' + ');
+      }
+
+      /**
+       * Calculate full siege camp cost breakdown for a given city level & modifiers
+       */
+      function calculateSiegeCost(level, skipLow, skipMid, skipHigh, otherBirthState) {
+        const cityInfo = CITY_LEVELS.find(c => c.level === Number(level)) || CITY_LEVELS[0];
+        const baseCost = cityInfo.baseCost;
+        const skipExtra = calcSkipPenalty(skipLow, skipMid, skipHigh);
+        const subtotal = baseCost + skipExtra;
+        const totalCost = otherBirthState ? Math.ceil(subtotal * 1.5) : subtotal;
+        const stateExtra = totalCost - subtotal;
+        const skipText = formatSkipBreakdown(skipLow, skipMid, skipHigh);
+
+        const detailParts = [`基礎 ${baseCost.toLocaleString()}`];
+        if (skipExtra > 0) {
+          detailParts.push(`跳城(${skipText}) +${skipExtra.toLocaleString()}`);
+        }
+        if (otherBirthState) {
+          detailParts.push(`跨州 +50%(+${stateExtra.toLocaleString()})`);
+        }
+
+        return {
+          level: cityInfo.level,
+          baseCost,
+          skipExtra,
+          stateExtra,
+          totalCost,
+          skipText,
+          detailText: detailParts.join(' · '),
+        };
+      }
+
+      /**
+       * Show non-blocking toast message (replaces alert/confirm)
+       */
+      function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        const colors = {
+          success: 'bg-emerald-950/95 border-emerald-500/60 text-emerald-200',
+          warning: 'bg-amber-950/95 border-amber-500/60 text-amber-200',
+          error: 'bg-rose-950/95 border-rose-500/60 text-rose-200',
+          info: 'bg-obsidian-850/95 border-sky-500/50 text-sky-200',
+        };
+        toast.className = `pointer-events-auto px-4 py-2.5 rounded-xl border shadow-xl text-xs sm:text-sm font-medium transition-all duration-300 transform translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+        toast.textContent = message;
+        el.toastContainer.appendChild(toast);
+
+        requestAnimationFrame(() => {
+          toast.classList.remove('translate-y-2', 'opacity-0');
+        });
+
+        setTimeout(() => {
+          toast.classList.add('translate-y-2', 'opacity-0');
+          setTimeout(() => toast.remove(), 300);
+        }, 2800);
+      }
+
+      /**
+       * Copy text to clipboard safely inside iframes using execCommand fallback
+       */
+      function copyTextToClipboard(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        let copied = false;
+        try {
+          copied = document.execCommand('copy');
+        } catch (err) {
+          copied = false;
+        }
+        document.body.removeChild(textarea);
+
+        if (copied) {
+          showToast('已複製攻城公告文字！可直接貼至 LINE / Discord', 'success');
+        } else if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text)
+            .then(() => showToast('已複製攻城公告文字！可直接貼至 LINE / Discord', 'success'))
+            .catch(() => showToast('複製失敗，請手動選取下方預覽文字複製', 'warning'));
+        } else {
+          showToast('請手動選取下方預覽文字複製', 'warning');
+        }
+      }
+
+      /* =====================================================================
+       * 5. STORAGE PERSISTENCE (WITH TRY/CATCH)
+       * ===================================================================== */
+      function loadFromStorage() {
+        try {
+          const rawQueue = localStorage.getItem(STORAGE_KEYS.QUEUE);
+          if (rawQueue) {
+            const parsed = JSON.parse(rawQueue);
+            if (Array.isArray(parsed)) {
+              state.queue = parsed.map(item => ({
+                id: item.id || `q_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+                level: Number(item.level) || 4,
+                name: String(item.name || ''),
+                skipLow: Math.max(0, Number(item.skipLow) || 0),
+                skipMid: Math.max(0, Number(item.skipMid) || 0),
+                skipHigh: Math.max(0, Number(item.skipHigh) || 0),
+                otherState: Boolean(item.otherState),
+                customStartTime: item.customStartTime || '',
+                rateDeltaAfter: Number(item.rateDeltaAfter) || 0,
+              }));
+            }
+          } else {
+            // Migrate legacy v1 queue if it exists
+            const legacyRaw = localStorage.getItem(STORAGE_KEYS.LEGACY_QUEUE);
+            if (legacyRaw) {
+              const legacyParsed = JSON.parse(legacyRaw);
+              if (Array.isArray(legacyParsed)) {
+                state.queue = legacyParsed.map(item => ({
+                  id: item.id || `q_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+                  level: Number(item.level) || 4,
+                  name: String(item.name || ''),
+                  skipLow: Number(item.level) <= 8 ? (Number(item.skippedCities) || 0) : 0,
+                  skipMid: (Number(item.level) >= 9 && Number(item.level) <= 12) ? (Number(item.skippedCities) || 0) : 0,
+                  skipHigh: Number(item.level) >= 13 ? (Number(item.skippedCities) || 0) : 0,
+                  otherState: Boolean(item.otherState),
+                  customStartTime: item.customStartTime || '',
+                  rateDeltaAfter: 0,
+                }));
+                saveQueue();
+              }
+            }
+          }
+        } catch (err) {
+          state.queue = [];
+        }
+
+        try {
+          const rawNotes = localStorage.getItem(STORAGE_KEYS.NOTES);
+          if (rawNotes) {
+            const parsedNotes = JSON.parse(rawNotes);
+            if (Array.isArray(parsedNotes) && parsedNotes.length > 0) {
+              state.notes = parsedNotes;
+            } else {
+              state.notes = [...DEFAULT_NOTES];
+            }
+          } else {
+            state.notes = [...DEFAULT_NOTES];
+          }
+        } catch (err) {
+          state.notes = [...DEFAULT_NOTES];
+        }
+      }
+
+      function saveQueue() {
+        try {
+          localStorage.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(state.queue));
+        } catch (err) {
+          // Ignore storage quota / private mode errors
+        }
+      }
+
+      function saveNotes() {
+        try {
+          localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(state.notes));
+        } catch (err) {
+          // Ignore storage quota / private mode errors
+        }
+      }
+
+      /* =====================================================================
+       * 6. RENDERING FUNCTIONS
+       * ===================================================================== */
+
+      /**
+       * Render Top Dashboard, Storage Progress, Full-Storage Countdown & Tactical Modifiers
+       */
+      function renderDashboard() {
+        const current = Math.max(0, Number(state.currentIron) || 0);
+        const cap = Math.max(1, Number(state.storageCap) || 3000);
+        const rawRate = Math.max(0, Number(state.hourlyRate) || 0);
+        const effRate = getEffectiveRate();
+
+        // Storage percentage & progress bar
+        const pct = Math.min(100, (current / cap) * 100);
+        el.storagePercentLabel.textContent = `${pct.toFixed(1)}%`;
+        el.storageProgressBar.style.width = `${pct}%`;
+
+        // Highlight active storage cap preset button
+        el.capPresetBtns.forEach(btn => {
+          const isMatch = Number(btn.dataset.cap) === cap;
+          btn.className = isMatch
+            ? 'cap-preset-btn px-2 py-1 text-xs font-mono rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition'
+            : 'cap-preset-btn px-2 py-1 text-xs font-mono rounded-md bg-obsidian-950 text-slate-300 border border-slate-700 hover:border-amber-500/50 transition';
+        });
+
+        // Production cap (160/hr) warning toggle
+        const isOverRateCap = rawRate > MAX_PRODUCTION_CAP;
+        el.rateCapWarning.classList.toggle('hidden', !isOverRateCap);
+        el.rateNormalHint.classList.toggle('hidden', isOverRateCap);
+
+        // Full-storage countdown readout
+        const remainingSpace = Math.max(0, cap - current);
+        el.remainingSpaceText.textContent = `${remainingSpace.toLocaleString()} 精鐵`;
+
+        if (current >= cap) {
+          el.fullStorageMainText.textContent = '已滿倉！請儘速起大營避免精鐵溢出';
+          el.fullStorageDateText.textContent = '已滿倉';
+          el.fullStorageCard.className = 'rounded-xl p-4 border bg-gradient-to-r from-rose-950/50 via-obsidian-850 to-amber-950/30 border-rose-500/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3';
+          el.fullStorageIconBox.className = 'w-10 h-10 rounded-lg bg-rose-500/20 border border-rose-500/40 flex items-center justify-center shrink-0 text-rose-400';
+        } else if (effRate <= 0) {
+          el.fullStorageMainText.textContent = '目前產量為 0，不會自動滿倉';
+          el.fullStorageDateText.textContent = '--';
+          el.fullStorageCard.className = 'rounded-xl p-4 border bg-obsidian-850 border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3';
+          el.fullStorageIconBox.className = 'w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0 text-slate-400';
+        } else {
+          const hoursToFull = remainingSpace / effRate;
+          const fullDate = new Date(state.baseTime.getTime() + hoursToFull * 3600000);
+          el.fullStorageMainText.textContent = formatDurationHours(hoursToFull);
+          el.fullStorageDateText.textContent = formatDateTime(fullDate);
+          el.fullStorageCard.className = 'rounded-xl p-4 border bg-gradient-to-r from-obsidian-850 via-obsidian-850 to-amber-950/25 border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3';
+          el.fullStorageIconBox.className = 'w-10 h-10 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-400';
+        }
+
+        // Update 3-tier skip displays & stepper disabled states
+        el.skipLowDisplay.textContent = state.skipLow;
+        el.skipMidDisplay.textContent = state.skipMid;
+        el.skipHighDisplay.textContent = state.skipHigh;
+        const totalSkipPenalty = calcSkipPenalty(state.skipLow, state.skipMid, state.skipHigh);
+        el.totalSkipPenaltyDisplay.textContent = `+${totalSkipPenalty.toLocaleString()}`;
+
+        el.skipStepBtns.forEach(btn => {
+          if (Number(btn.dataset.delta) < 0) {
+            const tier = btn.dataset.skipTier;
+            const val = tier === 'low' ? state.skipLow : tier === 'mid' ? state.skipMid : state.skipHigh;
+            btn.disabled = val <= 0;
+          }
+        });
+
+        // Update queue badge count
+        el.queueCountBadge.textContent = state.queue.length;
+      }
+
+      /**
+       * Render Tab 1: All-Levels City Readiness Table (Desktop) & Cards (Mobile)
+       */
+      function renderOverview() {
+        const current = Math.max(0, Number(state.currentIron) || 0);
+        const cap = Math.max(1, Number(state.storageCap) || 3000);
+        const effRate = getEffectiveRate();
+        const baseMs = state.baseTime.getTime();
+        const bufferHrs = getAttackBufferHours();
+
+        const rowsHtml = [];
+        const cardsHtml = [];
+
+        CITY_LEVELS.forEach(city => {
+          const costInfo = calculateSiegeCost(
+            city.level,
+            state.skipLow,
+            state.skipMid,
+            state.skipHigh,
+            state.otherBirthState
+          );
+          const need = costInfo.totalCost;
+          const exceedsCap = need > cap;
+          const shortfall = Math.max(0, need - current);
+          const readyNow = !exceedsCap && shortfall === 0;
+
+          let statusBadge = '';
+          let subStatus = '';
+          let readyTimeText = '--';
+          let attackTimeText = '--';
+          let rowHighlight = 'hover:bg-obsidian-850/60 transition';
+          let cardBorder = 'border-slate-700/60';
+
+          if (exceedsCap) {
+            statusBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/40">超過當前上限</span>`;
+            subStatus = `倉庫需達 ${need.toLocaleString()}`;
+            readyTimeText = `<span class="text-amber-400/80 text-xs">需先提升精鐵上限</span>`;
+            cardBorder = 'border-amber-500/40';
+          } else if (readyNow) {
+            statusBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/40">可立即起大營</span>`;
+            subStatus = `起營後餘 ${(current - need).toLocaleString()}`;
+            readyTimeText = `<span class="text-emerald-400 font-semibold">現在即可</span> <span class="text-xs text-slate-400 font-mono">(${formatDateTime(baseMs)})</span>`;
+            attackTimeText = `<span class="text-emerald-300 font-mono font-semibold">${formatDateTime(baseMs + bufferHrs * 3600000)}</span>`;
+            rowHighlight = 'bg-emerald-950/15 hover:bg-emerald-950/25 transition';
+            cardBorder = 'border-emerald-500/40';
+          } else if (effRate <= 0) {
+            statusBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-700/60 text-slate-300 border border-slate-600">產量為 0</span>`;
+            subStatus = `尚缺 ${shortfall.toLocaleString()} 精鐵`;
+            readyTimeText = `<span class="text-slate-500 text-xs">無法累積達標</span>`;
+          } else {
+            const waitHours = shortfall / effRate;
+            const readyMs = baseMs + waitHours * 3600000;
+            const attackMs = readyMs + bufferHrs * 3600000;
+            statusBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-cyan-500/15 text-cyan-300 border border-cyan-500/40">預計 ${formatDurationHours(waitHours)} 後達標</span>`;
+            subStatus = `尚缺 ${shortfall.toLocaleString()} 精鐵`;
+            readyTimeText = `<span class="text-sky-300 font-mono font-semibold">${formatDateTime(readyMs)}</span>`;
+            attackTimeText = `<span class="text-slate-100 font-mono font-semibold">${formatDateTime(attackMs)}</span>`;
+          }
+
+          // Desktop Table Row
+          rowsHtml.push(`
+            <tr class="${rowHighlight}">
+              <td class="py-3.5 px-4 whitespace-nowrap">
+                <span class="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-obsidian-850 border border-slate-700 font-mono font-bold text-amber-300">
+                  ${city.level} 級城
+                </span>
+              </td>
+              <td class="py-3.5 px-4">
+                <div class="font-mono font-bold text-slate-100 tabular-nums">${need.toLocaleString()}</div>
+                <div class="text-xs text-slate-400 mt-0.5">${costInfo.detailText}</div>
+              </td>
+              <td class="py-3.5 px-4">
+                <div>${statusBadge}</div>
+                <div class="text-xs text-slate-400 font-mono mt-1 tabular-nums">${subStatus}</div>
+              </td>
+              <td class="py-3.5 px-4 whitespace-nowrap tabular-nums">${readyTimeText}</td>
+              <td class="py-3.5 px-4 whitespace-nowrap tabular-nums">
+                ${attackTimeText}
+                ${attackTimeText !== '--' ? `<div class="text-[11px] text-slate-500">含緩衝 +${bufferHrs}h</div>` : ''}
+              </td>
+              <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                <button type="button" data-add-level="${city.level}" class="overview-add-btn px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-semibold transition">
+                  + 加入排程
+                </button>
+              </td>
+            </tr>
+          `);
+
+          // Mobile Card
+          cardsHtml.push(`
+            <div class="bg-obsidian-900/95 border ${cardBorder} rounded-xl p-4 space-y-3 shadow-md">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded-md bg-obsidian-850 border border-slate-700 font-mono font-bold text-amber-300 text-sm">${city.level} 級城</span>
+                    ${statusBadge}
+                  </div>
+                  <div class="text-xs text-slate-400 mt-1.5">${costInfo.detailText}</div>
+                </div>
+                <div class="text-right">
+                  <div class="text-xs text-slate-500">精鐵需求</div>
+                  <div class="font-mono font-bold text-slate-100 text-base tabular-nums">${need.toLocaleString()}</div>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 bg-obsidian-950/80 border border-slate-800 rounded-lg p-2.5 text-xs">
+                <div>
+                  <div class="text-slate-500">可起大營時刻</div>
+                  <div class="mt-0.5 tabular-nums">${readyTimeText}</div>
+                </div>
+                <div>
+                  <div class="text-slate-500">最快開打 (+${bufferHrs}h)</div>
+                  <div class="mt-0.5 tabular-nums">${attackTimeText}</div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between pt-1">
+                <span class="text-xs font-mono text-slate-400 tabular-nums">${subStatus}</span>
+                <button type="button" data-add-level="${city.level}" class="overview-add-btn px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-semibold transition">
+                  + 加入排程
+                </button>
+              </div>
+            </div>
+          `);
+        });
+
+        el.overviewTableBody.innerHTML = rowsHtml.join('');
+        el.overviewMobileCards.innerHTML = cardsHtml.join('');
+      }
+
+      /**
+       * Advance iron accumulation from `fromMs` to `toMs`, applying any scheduled production boosts along the way
+       */
+      function advanceIronToTime(fromMs, fromIron, toMs, rawRate, pendingBoosts, cap) {
+        let t = fromMs;
+        let iron = fromIron;
+        let rate = rawRate;
+        let overflow = 0;
+
+        const sorted = [...pendingBoosts].sort((a, b) => a.timeMs - b.timeMs);
+        const remainingBoosts = [];
+
+        for (const boost of sorted) {
+          if (boost.timeMs <= t) {
+            rate += boost.delta;
+          } else if (boost.timeMs <= toMs) {
+            const effRate = Math.min(MAX_PRODUCTION_CAP, Math.max(0, rate));
+            const hrs = (boost.timeMs - t) / 3600000;
+            const unclamped = iron + hrs * effRate;
+            if (unclamped > cap) {
+              overflow += unclamped - cap;
+              iron = cap;
+            } else {
+              iron = unclamped;
+            }
+            t = boost.timeMs;
+            rate += boost.delta;
+          } else {
+            remainingBoosts.push(boost);
+          }
+        }
+
+        if (toMs > t) {
+          const effRate = Math.min(MAX_PRODUCTION_CAP, Math.max(0, rate));
+          const hrs = (toMs - t) / 3600000;
+          const unclamped = iron + hrs * effRate;
+          if (unclamped > cap) {
+            overflow += unclamped - cap;
+            iron = cap;
+          } else {
+            iron = unclamped;
+          }
+        }
+
+        return { iron, rawRate: rate, overflow, remainingBoosts };
+      }
+
+      /**
+       * Find the earliest timestamp when iron reaches `needIron`, accounting for pending production boosts
+       */
+      function findEarliestReachTime(fromMs, fromIron, needIron, rawRate, pendingBoosts, cap) {
+        let t = fromMs;
+        let iron = fromIron;
+        let rate = rawRate;
+        const sorted = [...pendingBoosts].sort((a, b) => a.timeMs - b.timeMs);
+        const remainingBoosts = [];
+
+        // Apply any boosts that already took effect at or before `t`
+        let idx = 0;
+        while (idx < sorted.length && sorted[idx].timeMs <= t) {
+          rate += sorted[idx].delta;
+          idx++;
+        }
+
+        if (iron >= needIron) {
+          return {
+            reachable: true,
+            timeMs: t,
+            iron,
+            rawRate: rate,
+            overflow: 0,
+            remainingBoosts: sorted.slice(idx),
+          };
+        }
+
+        for (; idx < sorted.length; idx++) {
+          const boost = sorted[idx];
+          const effRate = Math.min(MAX_PRODUCTION_CAP, Math.max(0, rate));
+          if (effRate > 0) {
+            const hrsNeeded = (needIron - iron) / effRate;
+            const reachMs = t + hrsNeeded * 3600000;
+            if (reachMs <= boost.timeMs) {
+              return {
+                reachable: true,
+                timeMs: reachMs,
+                iron: needIron,
+                rawRate: rate,
+                overflow: 0,
+                remainingBoosts: sorted.slice(idx),
+              };
+            }
+          }
+          // Advance to this boost's timestamp
+          const segHrs = (boost.timeMs - t) / 3600000;
+          iron = Math.min(cap, iron + segHrs * effRate);
+          t = boost.timeMs;
+          rate += boost.delta;
+
+          if (iron >= needIron) {
+            return {
+              reachable: true,
+              timeMs: t,
+              iron,
+              rawRate: rate,
+              overflow: 0,
+              remainingBoosts: sorted.slice(idx + 1),
+            };
+          }
+        }
+
+        // All pending boosts applied; compute remaining time with final rate
+        const finalEffRate = Math.min(MAX_PRODUCTION_CAP, Math.max(0, rate));
+        if (finalEffRate <= 0) {
+          return { reachable: false };
+        }
+        const hrsNeeded = (needIron - iron) / finalEffRate;
+        return {
+          reachable: true,
+          timeMs: t + hrsNeeded * 3600000,
+          iron: needIron,
+          rawRate: rate,
+          overflow: 0,
+          remainingBoosts: [],
+        };
+      }
+
+      /**
+       * Simulate sequential multi-city queue timeline (with per-city post-siege production boosts)
+       */
+      function computeQueueTimeline() {
+        let runningIron = Math.max(0, Number(state.currentIron) || 0);
+        let runningMs = state.baseTime.getTime();
+        let runningRawRate = Math.max(0, Number(state.hourlyRate) || 0);
+        let pendingBoosts = [];
+        const cap = Math.max(1, Number(state.storageCap) || 3000);
+        const bufferHrs = getAttackBufferHours();
+
+        return state.queue.map((item, idx) => {
+          const costInfo = calculateSiegeCost(
+            item.level,
+            item.skipLow,
+            item.skipMid,
+            item.skipHigh,
+            item.otherState
+          );
+          const need = costInfo.totalCost;
+          const exceedsCap = need > cap;
+          const rateDeltaAfter = Number(item.rateDeltaAfter) || 0;
+
+          let startMs = runningMs;
+          let attackMs = null;
+          let ironBefore = runningIron;
+          let ironAfter = runningIron;
+          let overflowAmount = 0;
+          let status = 'ok'; // 'ok' | 'over_cap' | 'no_rate' | 'insufficient_custom'
+          let waitHours = 0;
+
+          // Compute effective rate before this step's post-capture boost
+          const pendingSum = pendingBoosts.reduce((acc, b) => acc + b.delta, 0);
+          let effRateBefore = Math.min(MAX_PRODUCTION_CAP, Math.max(0, runningRawRate + pendingSum));
+          let effRateAfter = Math.min(MAX_PRODUCTION_CAP, Math.max(0, runningRawRate + pendingSum + rateDeltaAfter));
+
+          if (exceedsCap) {
+            status = 'over_cap';
+          } else {
+            // Check if user specified a custom start time
+            let usedCustom = false;
+            if (item.customStartTime) {
+              const customDate = new Date(item.customStartTime);
+              if (!isNaN(customDate.getTime()) && customDate.getTime() >= runningMs) {
+                usedCustom = true;
+                const customMs = customDate.getTime();
+                const sim = advanceIronToTime(runningMs, runningIron, customMs, runningRawRate, pendingBoosts, cap);
+                startMs = customMs;
+                overflowAmount = Math.floor(sim.overflow);
+                ironBefore = sim.iron;
+                if (sim.iron < need) {
+                  status = 'insufficient_custom';
+                  attackMs = customMs + bufferHrs * 3600000;
+                } else {
+                  ironAfter = Math.max(0, sim.iron - need);
+                  attackMs = startMs + bufferHrs * 3600000;
+                  waitHours = Math.max(0, (startMs - runningMs) / 3600000);
+
+                  runningIron = ironAfter;
+                  runningMs = startMs;
+                  runningRawRate = sim.rawRate;
+                  pendingBoosts = sim.remainingBoosts;
+
+                  const futurePendingSum = pendingBoosts.reduce((acc, b) => acc + b.delta, 0);
+                  effRateBefore = Math.min(MAX_PRODUCTION_CAP, Math.max(0, runningRawRate + futurePendingSum));
+                  effRateAfter = Math.min(MAX_PRODUCTION_CAP, Math.max(0, runningRawRate + futurePendingSum + rateDeltaAfter));
+
+                  if (rateDeltaAfter !== 0) {
+                    pendingBoosts.push({ timeMs: attackMs, delta: rateDeltaAfter });
+                  }
+                }
+              }
+            }
+
+            if (!usedCustom) {
+              const reach = findEarliestReachTime(runningMs, runningIron, need, runningRawRate, pendingBoosts, cap);
+              if (!reach.reachable) {
+                status = 'no_rate';
+              } else {
+                startMs = reach.timeMs;
+                waitHours = Math.max(0, (startMs - runningMs) / 3600000);
+                ironBefore = reach.iron;
+                ironAfter = Math.max(0, reach.iron - need);
+                attackMs = startMs + bufferHrs * 3600000;
+                overflowAmount = Math.floor(reach.overflow);
+
+                runningIron = ironAfter;
+                runningMs = startMs;
+                runningRawRate = reach.rawRate;
+                pendingBoosts = reach.remainingBoosts;
+
+                const futurePendingSum = pendingBoosts.reduce((acc, b) => acc + b.delta, 0);
+                effRateBefore = Math.min(MAX_PRODUCTION_CAP, Math.max(0, runningRawRate + futurePendingSum));
+                effRateAfter = Math.min(MAX_PRODUCTION_CAP, Math.max(0, runningRawRate + futurePendingSum + rateDeltaAfter));
+
+                if (rateDeltaAfter !== 0) {
+                  pendingBoosts.push({ timeMs: attackMs, delta: rateDeltaAfter });
+                }
+              }
+            }
+          }
+
+          return {
+            index: idx,
+            item,
+            costInfo,
+            exceedsCap,
+            status,
+            startMs,
+            attackMs,
+            ironBefore: Math.floor(ironBefore),
+            ironAfter: Math.floor(ironAfter),
+            overflowAmount,
+            waitHours,
+            rateDeltaAfter,
+            effRateBefore,
+            effRateAfter,
+          };
+        });
+      }
+
+      /**
+       * Generate LINE / Discord announcement text from computed timeline
+       */
+      function buildAnnouncementText(timeline) {
+        if (!timeline || timeline.length === 0) return '';
+        const effRate = getEffectiveRate();
+        const lines = [
+          `【同盟攻城排程公告】`,
+          `基準時間：${formatDateTime(state.baseTime)}｜精鐵：${state.currentIron}/${state.storageCap} (+${effRate}/時)`,
+          `──────────────────`,
+        ];
+
+        timeline.forEach((step, idx) => {
+          const { item, costInfo, status, startMs, attackMs, ironAfter, overflowAmount, rateDeltaAfter, effRateBefore, effRateAfter } = step;
+          const title = item.name ? `${item.level}級城【${item.name}】` : `${item.level}級城`;
+          const tags = [];
+          if (costInfo.skipExtra > 0) tags.push(`跳城:${costInfo.skipText}`);
+          if (item.otherState) tags.push(`跨州+50%`);
+          const tagStr = tags.length > 0 ? ` (${tags.join(' / ')})` : '';
+
+          lines.push(`${idx + 1}. ${title}${tagStr}`);
+          lines.push(`   ▸ 精鐵消耗：${costInfo.totalCost.toLocaleString()} (${costInfo.detailText})`);
+
+          if (status === 'over_cap') {
+            lines.push(`   ▸ 狀態：⚠️ 超過當前倉庫上限 (${state.storageCap})，需先擴容`);
+          } else if (status === 'no_rate') {
+            lines.push(`   ▸ 狀態：⚠️ 產量為 0，無法累積達標`);
+          } else if (status === 'insufficient_custom') {
+            lines.push(`   ▸ 指定起營：${formatDateTime(startMs)}（⚠️ 該時刻精鐵僅約 ${step.ironBefore.toLocaleString()}，不足以起大營）`);
+          } else {
+            lines.push(`   ▸ 起大營時間：${formatDateTime(startMs)}（扣後餘 ${ironAfter.toLocaleString()}）`);
+            lines.push(`   ▸ 預計開打：${formatDateTime(attackMs)}`);
+            if (rateDeltaAfter !== 0) {
+              const sign = rateDeltaAfter > 0 ? '+' : '';
+              lines.push(`   ▸ 攻克後產量變動：${sign}${rateDeltaAfter}/時（${effRateBefore} → ${effRateAfter}/時）`);
+            }
+            if (overflowAmount > 0) {
+              lines.push(`   ▸ ⚠️ 提醒：等待期間將溢出約 ${overflowAmount.toLocaleString()} 精鐵`);
+            }
+          }
+        });
+
+        lines.push(`──────────────────`);
+        lines.push(`請各位盟友提早進攻城大營集結或預約，感謝配合！`);
+        return lines.join('\n');
+      }
+
+      /**
+       * Render Tab 2: Multi-City Queue Planner
+       */
+      function renderPlanner() {
+        const timeline = computeQueueTimeline();
+
+        if (timeline.length === 0) {
+          el.plannerListContainer.innerHTML = `
+            <div class="bg-obsidian-900/70 border border-dashed border-slate-700 rounded-2xl p-8 text-center space-y-2">
+              <div class="text-slate-300 font-semibold">尚未加入任何攻城目標</div>
+              <p class="text-xs text-slate-500">您可以在上方快速新增，或切換至「各級城池可打時間一覽」點擊「+ 加入排程」。</p>
+            </div>
+          `;
+          el.announcementPreviewBox.classList.add('hidden');
+          return;
+        }
+
+        const levelOptionsHtml = (selectedLevel) => CITY_LEVELS.map(c =>
+          `<option value="${c.level}" ${c.level === selectedLevel ? 'selected' : ''}>${c.level} 級城 (${c.baseCost})</option>`
+        ).join('');
+
+        el.plannerListContainer.innerHTML = timeline.map((step, idx) => {
+          const { item, costInfo, status, startMs, attackMs, ironBefore, ironAfter, overflowAmount, rateDeltaAfter, effRateBefore, effRateAfter } = step;
+          const isFirst = idx === 0;
+          const isLast = idx === timeline.length - 1;
+
+          let statusBanner = '';
+          if (status === 'over_cap') {
+            statusBanner = `<div class="rounded-lg bg-amber-950/40 border border-amber-500/40 px-3 py-2 text-xs text-amber-300">⚠️ 所需精鐵 (${costInfo.totalCost.toLocaleString()}) 超過當前倉庫上限 (${Number(state.storageCap).toLocaleString()})，請先提升同盟倉庫上限或減少跳城數。</div>`;
+          } else if (status === 'no_rate') {
+            statusBanner = `<div class="rounded-lg bg-slate-800/70 border border-slate-600 px-3 py-2 text-xs text-slate-300">⚠️ 目前精鐵產量為 0，無法累積至所需數量。</div>`;
+          } else if (status === 'insufficient_custom') {
+            statusBanner = `<div class="rounded-lg bg-rose-950/40 border border-rose-500/40 px-3 py-2 text-xs text-rose-300">⚠️ 指定起大營時刻 (${formatDateTime(startMs)}) 預估精鐵僅約 ${ironBefore.toLocaleString()}，尚不足 ${costInfo.totalCost.toLocaleString()}，請延後時間或清空自訂時間。</div>`;
+          } else if (overflowAmount > 0) {
+            statusBanner = `<div class="rounded-lg bg-amber-950/40 border border-amber-500/40 px-3 py-2 text-xs text-amber-300">⚠️ 滿倉溢出預警：等待至指定時刻前，倉庫將滿倉並浪費約 <strong class="font-mono">${overflowAmount.toLocaleString()}</strong> 精鐵！</div>`;
+          }
+
+          const rateBadgeText = rateDeltaAfter !== 0
+            ? `<span class="font-mono font-semibold ${rateDeltaAfter > 0 ? 'text-emerald-400' : 'text-rose-400'}">${effRateBefore} → ${effRateAfter}/時${effRateAfter >= MAX_PRODUCTION_CAP ? ' (封頂)' : ''}</span>`
+            : `<span class="font-mono text-slate-400">維持 ${effRateBefore}/時</span>`;
+
+          return `
+            <div class="space-y-2" data-queue-id="${item.id}">
+              <div class="bg-obsidian-900/95 border border-slate-700/70 rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg">
+                <!-- Top Header Row -->
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono font-bold text-sm flex items-center justify-center">${idx + 1}</span>
+                    <select data-field="level" class="queue-edit-input bg-obsidian-950 border border-slate-700 focus:border-amber-500 rounded-lg px-2.5 py-1 text-sm font-semibold text-slate-100 outline-none">
+                      ${levelOptionsHtml(item.level)}
+                    </select>
+                    <input type="text" data-field="name" value="${escapeHtml(item.name)}" placeholder="輸入城名 (選填)" class="queue-edit-input w-32 sm:w-44 bg-obsidian-950 border border-slate-700 focus:border-amber-500 rounded-lg px-2.5 py-1 text-sm text-slate-100 outline-none placeholder:text-slate-600" />
+                  </div>
+
+                  <div class="flex items-center gap-1.5">
+                    <button type="button" data-action="up" ${isFirst ? 'disabled' : ''} class="queue-action-btn px-2 py-1 rounded-lg bg-obsidian-850 border border-slate-700 text-xs text-slate-300 hover:border-amber-500/50 disabled:opacity-30 transition" title="上移">↑</button>
+                    <button type="button" data-action="down" ${isLast ? 'disabled' : ''} class="queue-action-btn px-2 py-1 rounded-lg bg-obsidian-850 border border-slate-700 text-xs text-slate-300 hover:border-amber-500/50 disabled:opacity-30 transition" title="下移">↓</button>
+                    <button type="button" data-action="delete" class="queue-action-btn px-2.5 py-1 rounded-lg bg-rose-950/40 border border-rose-500/30 text-xs text-rose-300 hover:bg-rose-900/50 transition">移除</button>
+                  </div>
+                </div>
+
+                <!-- Middle Row: Modifiers & Custom Time -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-end">
+                  <div class="lg:col-span-5 grid grid-cols-3 gap-2">
+                    <div>
+                      <label class="block text-[11px] text-slate-400 mb-1">跳4-8級 (+500)</label>
+                      <input type="number" min="0" max="20" data-field="skipLow" value="${item.skipLow}" class="queue-edit-input w-full bg-obsidian-950 border border-slate-700 focus:border-amber-500 rounded-lg px-2 py-1.5 text-sm font-mono text-center text-amber-300 outline-none" />
+                    </div>
+                    <div>
+                      <label class="block text-[11px] text-slate-400 mb-1">跳9-12 (+1500)</label>
+                      <input type="number" min="0" max="20" data-field="skipMid" value="${item.skipMid}" class="queue-edit-input w-full bg-obsidian-950 border border-slate-700 focus:border-amber-500 rounded-lg px-2 py-1.5 text-sm font-mono text-center text-amber-300 outline-none" />
+                    </div>
+                    <div>
+                      <label class="block text-[11px] text-slate-400 mb-1">跳13-20 (+3000)</label>
+                      <input type="number" min="0" max="20" data-field="skipHigh" value="${item.skipHigh}" class="queue-edit-input w-full bg-obsidian-950 border border-slate-700 focus:border-amber-500 rounded-lg px-2 py-1.5 text-sm font-mono text-center text-amber-300 outline-none" />
+                    </div>
+                  </div>
+
+                  <div class="lg:col-span-3 flex items-center h-[36px]">
+                    <label class="flex items-center gap-2 cursor-pointer select-none text-xs sm:text-sm text-slate-200">
+                      <input type="checkbox" data-field="otherState" ${item.otherState ? 'checked' : ''} class="queue-edit-input w-4 h-4 rounded accent-amber-500 cursor-pointer" />
+                      <span>跨出生州 (+50%)</span>
+                    </label>
+                  </div>
+
+                  <div class="lg:col-span-4">
+                    <div class="flex items-center justify-between mb-1">
+                      <label class="text-[11px] text-slate-400">指定起大營時間 (留空則自動最快)</label>
+                      ${item.customStartTime ? `<button type="button" data-action="clear-time" class="queue-action-btn text-[11px] text-sky-400 hover:text-sky-300 underline">恢復自動</button>` : ''}
+                    </div>
+                    <input type="datetime-local" data-field="customStartTime" value="${item.customStartTime || ''}" class="queue-edit-input w-full bg-obsidian-950 border border-slate-700 focus:border-amber-500 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-100 outline-none" />
+                  </div>
+                </div>
+
+                ${statusBanner}
+
+                <!-- Bottom Readout Strip -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-obsidian-950/80 border border-slate-800 rounded-xl p-3 text-xs">
+                  <div>
+                    <div class="text-slate-500">精鐵總消耗</div>
+                    <div class="font-mono font-bold text-amber-300 text-sm mt-0.5 tabular-nums">${costInfo.totalCost.toLocaleString()}</div>
+                    <div class="text-[11px] text-slate-500 truncate" title="${costInfo.detailText}">${costInfo.detailText}</div>
+                  </div>
+                  <div>
+                    <div class="text-slate-500">可起大營時刻</div>
+                    <div class="font-mono font-semibold text-sky-300 text-sm mt-0.5 tabular-nums">${status === 'ok' ? formatDateTime(startMs) : '--'}</div>
+                    <div class="text-[11px] text-slate-500">${item.customStartTime ? '手動指定' : '自動推算'}</div>
+                  </div>
+                  <div>
+                    <div class="text-slate-500">預計開打時刻</div>
+                    <div class="font-mono font-semibold text-emerald-300 text-sm mt-0.5 tabular-nums">${status === 'ok' && attackMs ? formatDateTime(attackMs) : '--'}</div>
+                    <div class="text-[11px] text-slate-500">含緩衝 +${getAttackBufferHours()}h</div>
+                  </div>
+                  <div>
+                    <div class="text-slate-500">起營前後精鐵</div>
+                    <div class="font-mono font-semibold text-slate-200 text-sm mt-0.5 tabular-nums">${status === 'ok' ? `${ironBefore.toLocaleString()} → ${ironAfter.toLocaleString()}` : '--'}</div>
+                    <div class="text-[11px] text-slate-500">剩餘可用精鐵</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Between-Siege Production Boost Connector -->
+              <div class="mx-2 sm:mx-6 px-3.5 py-2.5 rounded-xl bg-obsidian-850/90 border ${rateDeltaAfter !== 0 ? 'border-emerald-500/40' : 'border-slate-800'} flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+                <div class="flex items-center gap-2 text-slate-300">
+                  <span class="w-5 h-5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">⚡</span>
+                  <div>
+                    <span class="font-semibold text-slate-200">攻下第 ${idx + 1} 城後精鐵產量變動</span>
+                    <span class="text-slate-500 ml-1 hidden sm:inline">(開打後生效，如鍛冶 / 鐵礦場 / 升盟)</span>
+                  </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <div class="flex items-center gap-1">
+                    <button type="button" data-action="rate-preset" data-delta="5" class="queue-action-btn px-2 py-1 rounded-md bg-obsidian-950 border border-slate-700 hover:border-emerald-500/50 text-emerald-300 font-mono transition">+5</button>
+                    <button type="button" data-action="rate-preset" data-delta="10" class="queue-action-btn px-2 py-1 rounded-md bg-obsidian-950 border border-slate-700 hover:border-emerald-500/50 text-emerald-300 font-mono transition">+10</button>
+                    <button type="button" data-action="rate-preset" data-delta="20" class="queue-action-btn px-2 py-1 rounded-md bg-obsidian-950 border border-slate-700 hover:border-emerald-500/50 text-emerald-300 font-mono transition">+20</button>
+                    ${rateDeltaAfter !== 0 ? `<button type="button" data-action="rate-preset" data-delta="0" class="queue-action-btn px-2 py-1 rounded-md bg-obsidian-950 border border-slate-700 hover:border-amber-500/50 text-slate-400 hover:text-amber-300 transition">歸零</button>` : ''}
+                  </div>
+                  <div class="flex items-center gap-1 bg-obsidian-950 border border-slate-700 rounded-lg px-2 py-1">
+                    <input type="number" min="-160" max="160" step="1" data-field="rateDeltaAfter" value="${rateDeltaAfter}" class="queue-edit-input w-14 bg-transparent text-center font-mono font-bold text-emerald-400 outline-none tabular-nums" aria-label="攻克後精鐵產量變動" />
+                    <span class="text-slate-400 font-mono">/時</span>
+                  </div>
+                  <div class="pl-1">${rateBadgeText}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Update Announcement Preview
+        const announcementText = buildAnnouncementText(timeline);
+        el.announcementPreviewText.textContent = announcementText;
+        el.announcementPreviewBox.classList.remove('hidden');
+      }
+
+      /**
+       * Render Tab 3: Alliance Level Production Notes
+       */
+      function renderNotes() {
+        const sorted = [...state.notes].sort((a, b) => a.level - b.level);
+        if (sorted.length === 0) {
+          el.notesTableBody.innerHTML = `
+            <tr>
+              <td colspan="4" class="py-6 text-center text-slate-500 text-xs">尚無紀錄，請於上方表單新增。</td>
+            </tr>
+          `;
+          return;
+        }
+
+        el.notesTableBody.innerHTML = sorted.map(note => `
+          <tr class="hover:bg-obsidian-850/60 transition">
+            <td class="py-2.5 px-4 font-mono font-bold text-amber-300">Lv. ${note.level}</td>
+            <td class="py-2.5 px-4 font-mono font-semibold text-emerald-400">+${note.rate} / 時</td>
+            <td class="py-2.5 px-4 text-slate-300 text-xs sm:text-sm">${escapeHtml(note.memo || '—')}</td>
+            <td class="py-2.5 px-4 text-right space-x-1.5 whitespace-nowrap">
+              <button type="button" data-apply-rate="${note.rate}" class="note-apply-btn px-2.5 py-1 rounded-md bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/35 text-xs font-medium transition">
+                套用至計算機
+              </button>
+              <button type="button" data-del-level="${note.level}" class="note-del-btn px-2 py-1 rounded-md bg-obsidian-850 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 border border-slate-700 text-xs transition">
+                刪除
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      /**
+       * Master render trigger
+       */
+      function renderAll() {
+        renderDashboard();
+        renderOverview();
+        renderPlanner();
+        renderNotes();
+      }
+
+      /* =====================================================================
+       * 7. ACTIONS & EVENT HANDLERS
+       * ===================================================================== */
+      function switchTab(tabId) {
+        state.activeTab = tabId;
+        el.tabPanels.forEach(panel => {
+          panel.classList.toggle('hidden', panel.id !== tabId);
+        });
+        el.tabBtns.forEach(btn => {
+          const isActive = btn.dataset.tab === tabId;
+          if (isActive) {
+            btn.className = 'tab-btn px-4 py-2.5 rounded-t-xl text-sm font-semibold transition flex items-center gap-2 bg-amber-500/15 text-amber-300 border-b-2 border-amber-400';
+          } else {
+            btn.className = 'tab-btn px-4 py-2.5 rounded-t-xl text-sm font-semibold transition flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 border-b-2 border-transparent';
+          }
+        });
+      }
+
+      function addQueueItem(level, name, skipCounts, otherState) {
+        state.queue.push({
+          id: `q_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          level: Number(level) || 4,
+          name: String(name || '').trim(),
+          skipLow: Math.max(0, Number(skipCounts.low) || 0),
+          skipMid: Math.max(0, Number(skipCounts.mid) || 0),
+          skipHigh: Math.max(0, Number(skipCounts.high) || 0),
+          otherState: Boolean(otherState),
+          customStartTime: '',
+          rateDeltaAfter: 0,
+        });
+        saveQueue();
+        renderAll();
+        showToast(`已將 ${level} 級城加入攻城排程`, 'success');
+      }
+
+      function syncHelperToRate() {
+        const base = Math.max(0, Number(el.allianceBaseRate.value) || 0);
+        const bonus = Math.max(0, Number(el.forgingMineRate.value) || 0);
+        el.mineCapNotice.classList.toggle('hidden', bonus <= IRON_MINE_BONUS_CAP);
+        const total = base + bonus;
+        const effective = Math.min(total, MAX_PRODUCTION_CAP);
+        el.helperSumDisplay.textContent = `+${effective} / 時${total > MAX_PRODUCTION_CAP ? ' (已封頂)' : ''}`;
+        state.hourlyRate = total;
+        el.hourlyRate.value = total;
+        renderAll();
+      }
+
+      function initQuickSelect() {
+        el.quickCityLevel.innerHTML = CITY_LEVELS.map(c =>
+          `<option value="${c.level}">${c.level} 級城 (基礎 ${c.baseCost})</option>`
+        ).join('');
+      }
+
+      function bindEvents() {
+        // Dashboard Inputs
+        el.currentIron.addEventListener('input', e => {
+          state.currentIron = Math.max(0, Number(e.target.value) || 0);
+          renderAll();
+        });
+
+        el.storageCap.addEventListener('input', e => {
+          state.storageCap = Math.max(100, Number(e.target.value) || 3000);
+          renderAll();
+        });
+
+        el.capPresetBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            const val = Number(btn.dataset.cap);
+            state.storageCap = val;
+            el.storageCap.value = val;
+            renderAll();
+          });
+        });
+
+        el.customCapFocusBtn.addEventListener('click', () => {
+          el.storageCap.focus();
+          el.storageCap.select();
+        });
+
+        el.hourlyRate.addEventListener('input', e => {
+          state.hourlyRate = Math.max(0, Number(e.target.value) || 0);
+          renderAll();
+        });
+
+        el.toggleRateHelperBtn.addEventListener('click', () => {
+          const isHidden = el.rateHelperPanel.classList.toggle('hidden');
+          el.toggleRateHelperBtn.textContent = isHidden ? '展開明細試算' : '收合明細試算';
+        });
+
+        el.allianceBaseRate.addEventListener('input', syncHelperToRate);
+        el.forgingMineRate.addEventListener('input', syncHelperToRate);
+
+        el.baseTime.addEventListener('change', e => {
+          const parsed = new Date(e.target.value);
+          if (!isNaN(parsed.getTime())) {
+            state.baseTime = parsed;
+            renderAll();
+          }
+        });
+
+        el.resetNowBtn.addEventListener('click', () => {
+          state.baseTime = new Date();
+          el.baseTime.value = toLocalInputString(state.baseTime);
+          renderAll();
+          showToast('已重設基準時間為現在', 'info');
+        });
+
+        // Tactical Modifiers: 3-Tier Skipped City Steppers
+        el.skipStepBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            const tier = btn.dataset.skipTier;
+            const delta = Number(btn.dataset.delta);
+            if (tier === 'low') state.skipLow = Math.max(0, Math.min(20, state.skipLow + delta));
+            if (tier === 'mid') state.skipMid = Math.max(0, Math.min(20, state.skipMid + delta));
+            if (tier === 'high') state.skipHigh = Math.max(0, Math.min(20, state.skipHigh + delta));
+            renderAll();
+          });
+        });
+
+        el.resetSkipBtn.addEventListener('click', () => {
+          state.skipLow = 0;
+          state.skipMid = 0;
+          state.skipHigh = 0;
+          renderAll();
+          showToast('已將各等級跳城數歸零', 'info');
+        });
+
+        el.otherBirthState.addEventListener('change', e => {
+          state.otherBirthState = e.target.checked;
+          renderAll();
+        });
+
+        el.includeBuildTime.addEventListener('change', e => {
+          state.includeBuildTime = e.target.checked;
+          renderAll();
+        });
+
+        el.includeRallyTime.addEventListener('change', e => {
+          state.includeRallyTime = e.target.checked;
+          renderAll();
+        });
+
+        // Tab Switching
+        el.tabBtns.forEach(btn => {
+          btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
+
+        // Tab 1: Delegate "+ 加入排程" buttons
+        document.getElementById('tab-overview').addEventListener('click', e => {
+          const btn = e.target.closest('.overview-add-btn');
+          if (!btn) return;
+          const level = Number(btn.dataset.addLevel);
+          addQueueItem(
+            level,
+            '',
+            { low: state.skipLow, mid: state.skipMid, high: state.skipHigh },
+            state.otherBirthState
+          );
+        });
+
+        // Tab 2: Quick Add
+        el.quickAddBtn.addEventListener('click', () => {
+          addQueueItem(
+            Number(el.quickCityLevel.value),
+            el.quickCityName.value,
+            {
+              low: Number(el.quickSkipLow.value) || 0,
+              mid: Number(el.quickSkipMid.value) || 0,
+              high: Number(el.quickSkipHigh.value) || 0,
+            },
+            el.quickOtherState.checked
+          );
+          el.quickCityName.value = '';
+        });
+
+        el.clearQueueBtn.addEventListener('click', () => {
+          if (state.queue.length === 0) return;
+          state.queue = [];
+          saveQueue();
+          renderAll();
+          showToast('已清空攻城排程', 'info');
+        });
+
+        el.copyAnnouncementBtn.addEventListener('click', () => {
+          const timeline = computeQueueTimeline();
+          if (timeline.length === 0) {
+            showToast('排程目前為空，請先加入至少一座城池', 'warning');
+            return;
+          }
+          copyTextToClipboard(buildAnnouncementText(timeline));
+        });
+
+        el.copyPreviewBtn.addEventListener('click', () => {
+          const text = el.announcementPreviewText.textContent;
+          if (text) copyTextToClipboard(text);
+        });
+
+        // Tab 2: Delegate queue card edits & actions
+        el.plannerListContainer.addEventListener('change', e => {
+          const input = e.target.closest('.queue-edit-input');
+          if (!input) return;
+          const card = input.closest('[data-queue-id]');
+          if (!card) return;
+          const item = state.queue.find(q => q.id === card.dataset.queueId);
+          if (!item) return;
+
+          const field = input.dataset.field;
+          if (field === 'level') item.level = Number(input.value);
+          else if (field === 'name') item.name = input.value;
+          else if (field === 'skipLow') item.skipLow = Math.max(0, Number(input.value) || 0);
+          else if (field === 'skipMid') item.skipMid = Math.max(0, Number(input.value) || 0);
+          else if (field === 'skipHigh') item.skipHigh = Math.max(0, Number(input.value) || 0);
+          else if (field === 'otherState') item.otherState = input.checked;
+          else if (field === 'customStartTime') item.customStartTime = input.value;
+          else if (field === 'rateDeltaAfter') {
+            item.rateDeltaAfter = Math.max(-160, Math.min(160, Number(input.value) || 0));
+          }
+
+          saveQueue();
+          renderAll();
+        });
+
+        el.plannerListContainer.addEventListener('click', e => {
+          const btn = e.target.closest('.queue-action-btn');
+          if (!btn) return;
+          const card = btn.closest('[data-queue-id]');
+          if (!card) return;
+          const idx = state.queue.findIndex(q => q.id === card.dataset.queueId);
+          if (idx === -1) return;
+
+          const action = btn.dataset.action;
+          if (action === 'delete') {
+            state.queue.splice(idx, 1);
+            showToast('已移除該攻城目標', 'info');
+          } else if (action === 'up' && idx > 0) {
+            [state.queue[idx - 1], state.queue[idx]] = [state.queue[idx], state.queue[idx - 1]];
+          } else if (action === 'down' && idx < state.queue.length - 1) {
+            [state.queue[idx], state.queue[idx + 1]] = [state.queue[idx + 1], state.queue[idx]];
+          } else if (action === 'clear-time') {
+            state.queue[idx].customStartTime = '';
+          } else if (action === 'rate-preset') {
+            const delta = Number(btn.dataset.delta);
+            if (delta === 0) {
+              state.queue[idx].rateDeltaAfter = 0;
+            } else {
+              const currentDelta = Number(state.queue[idx].rateDeltaAfter) || 0;
+              state.queue[idx].rateDeltaAfter = Math.max(-160, Math.min(160, currentDelta + delta));
+            }
+          }
+          saveQueue();
+          renderAll();
+        });
+
+        // Tab 3: Notes form & actions
+        el.addNoteForm.addEventListener('submit', e => {
+          e.preventDefault();
+          const level = Number(el.noteLevel.value);
+          const rate = Number(el.noteRate.value);
+          const memo = el.noteMemo.value.trim();
+          if (!level || level < 1 || isNaN(rate) || rate < 0) return;
+
+          const existingIdx = state.notes.findIndex(n => n.level === level);
+          if (existingIdx >= 0) {
+            state.notes[existingIdx] = { level, rate, memo };
+            showToast(`已更新 Lv.${level} 同盟精鐵產出紀錄`, 'success');
+          } else {
+            state.notes.push({ level, rate, memo });
+            showToast(`已儲存 Lv.${level} 同盟精鐵產出紀錄`, 'success');
+          }
+          saveNotes();
+          el.addNoteForm.reset();
+          renderNotes();
+        });
+
+        el.notesTableBody.addEventListener('click', e => {
+          const applyBtn = e.target.closest('.note-apply-btn');
+          if (applyBtn) {
+            const rate = Number(applyBtn.dataset.applyRate) || 0;
+            state.hourlyRate = rate;
+            el.hourlyRate.value = rate;
+            el.allianceBaseRate.value = rate;
+            renderAll();
+            showToast(`已套用每小時產出 +${rate} 至計算機`, 'success');
+            return;
+          }
+          const delBtn = e.target.closest('.note-del-btn');
+          if (delBtn) {
+            const lvl = Number(delBtn.dataset.delLevel);
+            state.notes = state.notes.filter(n => n.level !== lvl);
+            saveNotes();
+            renderNotes();
+            showToast(`已刪除 Lv.${lvl} 紀錄`, 'info');
+          }
+        });
+
+        el.resetNotesDefaultBtn.addEventListener('click', () => {
+          state.notes = [...DEFAULT_NOTES];
+          saveNotes();
+          renderNotes();
+          showToast('已恢復預設同盟產出紀錄', 'info');
+        });
+      }
+
+      /* =====================================================================
+       * 8. INITIALIZATION
+       * ===================================================================== */
+      function init() {
+        loadFromStorage();
+        initQuickSelect();
+        el.baseTime.value = toLocalInputString(state.baseTime);
+        bindEvents();
+        renderAll();
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
